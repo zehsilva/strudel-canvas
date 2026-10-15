@@ -9,7 +9,7 @@
 <body>
 <main>
 <header>
-  <div class="brand"><div class="brandmark">∿</div><div><h1>strudel canvas <span class="version">/ 1.5</span></h1><p>RECURSIVE PATTERN STUDIO</p></div></div>
+  <div class="brand"><div class="brandmark">∿</div><div><h1>strudel canvas <span class="version">/ 1.6</span></h1><p>RECURSIVE PATTERN STUDIO</p></div></div>
   <div class="header-right"><button class="pill" id="engineBadge" type="button" title="Show engine diagnostics" aria-label="Show engine diagnostics">◌ Loading Strudel…</button><button class="link-button" id="openStrudel">↗ Strudel REPL</button><button class="link-button" id="saveProject">↓ Save project</button></div>
 </header>
 <aside class="app-nav">
@@ -35,7 +35,7 @@
  </section>
  <div class="modebar"><div class="tabset"><button class="tab active" data-view="lanes">▦ Lanes</button><button class="tab" data-view="piano">♬ Piano roll</button><button class="tab" data-view="samples">♫ Samples</button><button class="tab" data-view="orbit">◉ Orbits</button><button class="tab" data-view="transforms">↗ Transforms</button></div><span class="muted-note">One cycle = four beats · different subdivisions coexist</span></div>
  <div class="pattern-panel" id="patternPanel">
-  <div class="grid-header"><div class="eyebrow">PATTERN LAYERS</div><div class="beat-ruler"><span>1</span><span></span><span></span><span></span><span>2</span><span></span><span></span><span></span><span>3</span><span></span><span></span><span></span><span>4</span><span></span><span></span><span></span></div><div class="eyebrow">CYCLE</div></div>
+  <div class="grid-header"><div class="eyebrow">PATTERN LAYERS</div><div class="beat-ruler"><span>1</span><span></span><span></span><span></span><span>2</span><span></span><span></span><span></span><span>3</span><span></span><span></span><span></span><span>4</span><span></span><span></span><span></span></div><div class="eyebrow">MUTE</div></div>
   <div id="lanes"></div>
   <div class="grid-bottom"><div class="track-actions"><button class="add-track" id="addLane">＋ Drum lane</button><button class="add-track" id="addKeysLane">＋ Keys lane</button></div><span id="layerCount">5 independent layers</span></div>
   <div class="lens-head"><div><span class="eyebrow">RECURSIVE LENS</span><div class="breadcrumbs" id="crumbs"></div></div><div class="lens-actions"><button id="goUp" class="mini-button">↑ Up</button><button id="dive" class="mini-button">↳ Enter</button><button id="split2" class="mini-button mint-button">⊞ Split ×2</button><button id="split3" class="mini-button">⊞ ×3</button><button id="collapse" class="mini-button">− Collapse</button></div></div>
@@ -44,7 +44,7 @@
   <div class="lens-help">Click: toggle event/rest · Double-click: enter or subdivide · Shift+click: split in two. Each cell occupies an equal fraction of its parent.</div>
  </div>
  <div id="pianoPanel" class="pattern-panel is-hidden">
-  <div class="piano-header"><div><span class="eyebrow">PIANO ROLL / SELECTED KEYS LANE</span><h3 id="pianoTitle">Keys</h3><p class="muted-note">Click a cell to add/remove a note. Multiple notes in one step create chords. Double-click nested steps in Lanes to edit their subdivision.</p></div><div class="piano-tools"><label class="octave-label">Keyboard range <select id="pianoOctave" class="mini-button"><option value="1">C1–B3</option><option value="2">C2–B4</option><option value="3" selected>C3–B5</option><option value="4">C4–B6</option></select></label><button class="mini-button" id="pianoClear">Clear notes</button><button class="mini-button" id="pianoAddLane">＋ New keys lane</button></div></div>
+  <div class="piano-header"><div><span class="eyebrow">PIANO ROLL / SELECTED KEYS LANE</span><h3 id="pianoTitle">Keys</h3><p class="muted-note">Click cells for single notes or chords. Use the inspector Arpeggiator to play each chord as a sequence while preserving your original chord grid.</p></div><div class="piano-tools"><label class="octave-label">Keyboard range <select id="pianoOctave" class="mini-button"><option value="1">C1–B3</option><option value="2">C2–B4</option><option value="3" selected>C3–B5</option><option value="4">C4–B6</option></select></label><button class="mini-button" id="pianoClear">Clear notes</button><button class="mini-button" id="pianoAddLane">＋ New keys lane</button></div></div>
   <div id="pianoRoll" class="piano-roll" aria-label="Piano roll editor"></div>
   <div class="grid-bottom"><span id="pianoRange">C3–B5 · chromatic</span><span id="pianoFocus">Editing 1 cycle</span></div>
  </div>
@@ -79,6 +79,12 @@
  <div class="field"><div class="top"><span>Track type</span></div><select id="laneType" class="wide-select"><option value="drum">Drum / sample</option><option value="melody">Keys / pitched notes</option></select></div>
  <div id="drumSoundField" class="field"><div class="top"><span>Source / sample</span><button type="button" class="tiny-link" id="editSampleLibrary">+ Library</button></div><select id="sourceSound" class="wide-select"></select></div>
  <div id="keysSoundField" class="field" hidden><div class="top"><span>Keys instrument</span></div><select id="keyInstrument" class="wide-select"></select><button class="wide-action" id="openPiano">♬ Open piano roll</button></div>
+ <div id="arpeggiatorField" class="field arp-panel" hidden>
+  <div class="top"><span>Arpeggiator · chords</span><b>Non-destructive</b></div>
+  <label class="arp-label">Direction <select id="arpMode" class="wide-select"><option value="off">Off · play chords</option><option value="up">Up ↑</option><option value="down">Down ↓</option><option value="updown">Up & down ↕</option></select></label>
+  <div class="arp-options"><label>Notes / chord step <select id="arpSteps" class="wide-select"><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="6">6</option><option value="8">8</option></select></label><label>Octaves <select id="arpOctaves" class="wide-select"><option value="1" selected>1</option><option value="2">2</option></select></label></div>
+  <p class="arp-hint" id="arpHint">Play chord notes simultaneously</p>
+ </div>
  <div class="field"><div class="top"><span>Euclidean pulses</span><b id="pulseValue">3 / 16</b></div><input class="range" type="range" min="0" max="16" value="3" id="pulsesRange"></div>
  <div class="field"><div class="top"><span>Cycle rotation</span><b id="rotationValue">0 steps</b></div><input class="range" type="range" min="-15" max="15" value="0" id="rotationRange"></div>
  <div class="field counter"><span>Root subdivisions</span><div class="stepcounter"><button id="stepsMinus" aria-label="Remove last subdivision">−</button><strong id="stepsValue">16</strong><button id="stepsPlus" aria-label="Add subdivision">+</button></div></div>
