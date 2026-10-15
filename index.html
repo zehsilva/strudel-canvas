@@ -94,7 +94,7 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
 <body>
 <main>
 <header>
-  <div class="brand"><div class="brandmark">∿</div><div><h1>strudel canvas <span class="version">/ 1.4</span></h1><p>RECURSIVE PATTERN STUDIO</p></div></div>
+  <div class="brand"><div class="brandmark">∿</div><div><h1>strudel canvas <span class="version">/ 1.5</span></h1><p>RECURSIVE PATTERN STUDIO</p></div></div>
   <div class="header-right"><button class="pill" id="engineBadge" type="button" title="Show engine diagnostics" aria-label="Show engine diagnostics">◌ Loading Strudel…</button><button class="link-button" id="openStrudel">↗ Strudel REPL</button><button class="link-button" id="saveProject">↓ Save project</button></div>
 </header>
 <aside class="app-nav">
@@ -389,7 +389,25 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
     const gain=Number(lane.gain);
     if(speed<=0||speed>8||!Number.isFinite(gain)||gain<0||gain>2||!Number.isInteger(lane.rotation||0)||Math.abs(lane.rotation||0)>64)throw Error('Invalid lane modifiers');
     const drum=lane.kind!=='melody';
-    let code=drum?`s(${JSON.stringify(mini)})`:`note(${JSON.stringify(mini)}).s(${JSON.stringify(lane.instrument||'sawtooth')}).lpf(750)`;
+    // @strudel/web does not register General MIDI soundfonts. Treat historical
+    // gm_* choices as explicit built-in synth approximations, never silent IDs.
+    const patches={
+      gm_piano:'piano',
+      rhodes:'triangle', gm_epiano1:'triangle', gm_epiano2:'sine',
+      organ:'square', gm_organ:'square',
+      bass:'triangle', gm_acoustic_bass:'triangle',
+      vibes:'sine', gm_vibraphone:'sine',
+      musicbox:'sine', gm_music_box:'sine',
+    };
+    const instrument=lane.instrument||'piano';
+    const voice=patches[instrument]||instrument;
+    let code=drum?`s(${JSON.stringify(mini)})`:`note(${JSON.stringify(mini)}).s(${JSON.stringify(voice)})`;
+    // Shape synthesized keyboard sounds, but never low-pass-filter sampled
+    // piano or arbitrary user samples: the old blanket 750 Hz filter hid notes.
+    if(!drum && ['rhodes','gm_epiano1'].includes(instrument))code+='.lpf(3300).attack(.003).decay(.32).sustain(.18).release(.18)';
+    else if(!drum && ['gm_epiano2','vibes','gm_vibraphone','musicbox','gm_music_box'].includes(instrument))code+='.attack(.002).decay(.4).sustain(.08).release(.2)';
+    else if(!drum && ['organ','gm_organ'].includes(instrument))code+='.lpf(2200).attack(.02).release(.15)';
+    else if(!drum && ['bass','gm_acoustic_bass'].includes(instrument))code+='.lpf(1400).attack(.002).decay(.3).sustain(.15).release(.12)';
     if(lane.rotation){const n=lane.root.type==='sequence'?lane.root.children.length:lane.root.steps;
       if(lane.root.type==='euclidean'){
         // rotation is serialized directly in euclidean mini syntax if editing its own node.
@@ -431,6 +449,10 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
     validateSamples(project);
     const custom=project.customSamples||[];
     const packStatements=(project.samplePacks||[]).map(u=>`samples(${JSON.stringify(u)})`);
+    // In the reference REPL this manifest loads automatically. @strudel/web
+    // starts with no external samples, so exports must include it explicitly.
+    if(project.lanes.some(l=>!l.muted&&l.kind==='melody'&&(!l.instrument||['piano','gm_piano'].includes(l.instrument))))
+      packStatements.unshift('samples("https://raw.githubusercontent.com/felixroos/dough-samples/main/piano.json")');
     const map=Object.fromEntries(custom.map(s=>[s.name,s.pitched?{[s.baseNote||'c4']:s.url}:s.url]));
     if(custom.length)packStatements.push(`samples(${JSON.stringify(map,null,2)})`);
     const declarations=packStatements.length?packStatements.join('\n')+'\n':'';
@@ -469,7 +491,11 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
   const $ = id => document.getElementById(id);
   const colors = { bd:'#9cebb7',sd:'#bb9ffc',hh:'#83caff',oh:'#f69ac0',rim:'#ffbd7c',cp:'#f9b0bd',lt:'#d9aaff',c2:'#f5ce83' };
   const drumSources={bd:'Kick',sd:'Snare',hh:'Closed hat',oh:'Open hat',rim:'Rimshot',cp:'Clap',lt:'Low tom',sh:'Shaker',cb:'Cowbell',perc:'Percussion'};
-  const keysSources={piano:'Acoustic piano',gm_epiano1:'Electric piano / Rhodes',gm_epiano2:'Electric piano 2',gm_acoustic_bass:'Acoustic bass',gm_organ:'Organ',gm_vibraphone:'Vibraphone',gm_music_box:'Music box',triangle:'Triangle synth',sine:'Sine synth',sawtooth:'Saw synth',square:'Square synth'};
+  const keysSources={piano:'Grand piano · sampled',rhodes:'Rhodes-style keys · synth',organ:'Organ-style keys · synth',bass:'Bass keys · synth',vibes:'Vibraphone-style · synth',musicbox:'Music box-style · synth',triangle:'Triangle synth',sine:'Sine synth',sawtooth:'Saw synth',square:'Square synth'};
+  // Older sketches used unregistered gm_* names. Preserve their note patterns
+  // and switch those instruments to playable synthesizer approximations.
+  const legacyKeys={gm_piano:'piano',gm_epiano1:'rhodes',gm_epiano2:'rhodes',gm_acoustic_bass:'bass',gm_organ:'organ',gm_vibraphone:'vibes',gm_music_box:'musicbox'};
+  const PIANO_MAP_URL='https://raw.githubusercontent.com/felixroos/dough-samples/main/piano.json';
   const pianoNotes=(octave)=>Array.from({length:36},(_,i)=>{const midi=(octave+4)*12-1-i;const names=['c','c#','d','eb','e','f','f#','g','ab','a','bb','b'];return names[midi%12]+(Math.floor(midi/12)-1)});
   const sampleLibrary=()=>project.customSamples||[];
   const packs=()=>project.samplePacks||[];
@@ -734,7 +760,13 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
     try {
       await window.initStrudel({prebake:()=>{
         if(typeof window.samples!=='function')throw new Error('samples() was not exposed by the engine');
-        return window.samples('github:tidalcycles/dirt-samples');
+        // @strudel/web does not pre-register the piano bank used by the REPL.
+        // Load both sample maps before evaluating notes. Actual WAV/MP3 data is
+        // lazy-loaded by Strudel when a note is first triggered.
+        return Promise.all([
+          window.samples('github:tidalcycles/dirt-samples'),
+          window.samples(PIANO_MAP_URL),
+        ]);
       }});
     } catch(e) {
       throw new Error('Strudel initialization / sample loading failed: '+(e.message||e));
@@ -879,6 +911,7 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
     l.gain=.32;project.lanes.push(l);selectLane(project.lanes.length-1);meaningful();setView('piano');}
   const setChoice=(select,value,text)=>{const opt=document.createElement('option');opt.value=value;opt.textContent=text;select.appendChild(opt)};
   function populateSoundSelects(){const l=selectedLane();const drum=$('sourceSound'),keys=$('keyInstrument');drum.innerHTML='';keys.innerHTML='';
+    if(l.kind==='melody'&&legacyKeys[l.instrument])l.instrument=legacyKeys[l.instrument];
     for(const [name,desc] of Object.entries(drumSources))setChoice(drum,name,name+' · '+desc);
     for(const [name,desc] of Object.entries(keysSources))setChoice(keys,name,desc);
     for(const x of sampleLibrary()){setChoice(drum,x.name,'♫ '+x.name);if(x.pitched)setChoice(keys,x.name,'♫ '+x.name+' ('+x.baseNote+')')}
