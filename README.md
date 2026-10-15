@@ -93,3 +93,16 @@ The `@strudel/web` bundle starts with no external instrument sample maps. Strude
 The acoustic piano requires HTTPS access to `raw.githubusercontent.com`; the triangle/sine keyboard voices are completely synthesized. First piano playback may take longer while Strudel downloads MP3 samples. For missing sound, inspect the Network panel for errors loading `piano.json` or MP3 files.
 
 Sample attribution: Salamander Grand Piano V3 by Alexander Holm, CC BY 3.0. Sample data is not redistributed in this repository.
+
+## v1.6 · Stable track mute and arpeggiator
+
+- Mute is **lane-local**. Every lane has its own ON/MUTED control, synchronized with the selected lane's inspector checkbox.
+- A muted lane emits `silence` at the **same position** in `stack(...)`, rather than disappearing and shifting the remaining lanes. Other instruments' code remains unchanged.
+- Mute changes evaluate immediately while playing **even with Auto-evaluate disabled**. Queued obsolete audio edits are discarded using a mix revision counter; the existing Stop/AudioContext suspension remains intact.
+- Visual mute buttons are disabled while using custom Strudel code, since the visual mix is not authoritative in that mode.
+- A non-destructive chord arpeggiator in the Keys inspector supports **Off, Up, Down, Up & Down**, **2/3/4/6/8 notes per chord step**, and **1 or 2 octaves**. It converts each chord into an equally timed nested sequence for playback, without altering the original piano-roll notes or project JSON.
+- Corrected collapsing a recursive group containing chords: the chord remains valid rather than becoming a comma-containing event.
+- **Timing:** arp subdivisions are per chord's step, *not* constant eighth/sixteenth notes globally. A chord in a very short cell will arpeggiate quickly.
+- **Limitations:** Strudel audio that was triggered before a live mute can have a short release/sample tail. Custom code still requires editing its own pattern. Real audio is browser-dependent.
+
+Local verification: `node --test tests/core.test.cjs`; `python tests/test_integration.py`; `python tests/test_mute_arp.py` (the included browser tests simulate the Strudel API and verify generated patterns, not live acoustic output).
