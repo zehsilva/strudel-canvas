@@ -1,0 +1,168 @@
+/* Strudel Canvas Pattern IR. No DOM, audio, or external dependencies. */
+(function (root, factory) {
+  const lib = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = lib;
+  root.StrudelCanvasCore = lib;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+  let counter = 0;
+  const id = () => `n${++counter}`;
+  const ev = value => ({ id: id(), type: 'event', value: String(value) });
+  const rest = () => ({ id: id(), type: 'rest' });
+  const seq = children => ({ id: id(), type: 'sequence', children });
+  const euc = (value,pulses,steps,rotation=0) => ({id:id(),type:'euclidean',value,pulses,steps,rotation});
+  const mod = (a,n) => ((a % n) + n) % n;
+  const gcd = (a,b) => {a=Math.abs(a); b=Math.abs(b); while(b){[a,b]=[b,a%b]} return a||1};
+  const frac = (n,d=1) => {if(!Number.isSafeInteger(n)||!Number.isSafeInteger(d)||d<=0) throw Error('Invalid rational time');const g=gcd(n,d);return {n:n/g,d:d/g}};
+  const add = (a,b) => frac(a.n*b.d + b.n*a.d,a.d*b.d);
+  const sub = (a,b) => frac(a.n*b.d - b.n*a.d,a.d*b.d);
+  const mul = (a,b) => frac(a.n*b.n,a.d*b.d);
+  const divide = (a,b) => frac(a.n*b.d,a.d*b.n);
+  const num = a => a.n/a.d;
+  const clone = v => JSON.parse(JSON.stringify(v));
+  const at = (node,path=[]) => path.reduce((n,i) => {
+    if(n.type!=='sequence'||!n.children[i])throw Error('No pattern at this path');return n.children[i];
+  },node);
+  function replace(node,path,next){
+    if(!path.length)return next;
+    if(node.type!=='sequence')throw Error('Expected a subdivision');
+    const [i,...restPath]=path;
+    if(i<0||i>=node.children.length)throw Error('Invalid step');
+    return {...node,children:node.children.map((c,j)=>j===i?replace(c,restPath,next):c)};
+  }
+  function split(node,path,count=2){
+    if(!Number.isInteger(count)||count<2||count>16)throw Error('Invalid split size');
+    const target=at(node,path);
+    if(target.type==='sequence')throw Error('Already subdivided');
+    if(target.type==='euclidean')throw Error('Convert Euclidean rhythm to steps before splitting');
+    return replace(node,path,seq([target,...Array.from({length:count-1},()=>rest())]));
+  }
+  function collapse(node,path){
+    const target=at(node,path);
+    if(target.type!=='sequence')throw Error('Not a subdivision');
+    const first=flatten(target).find(h=>h.value!==null);
+    return replace(node,path,first?ev(first.value):rest());
+  }
+  function toggle(node,path,value){
+    const target=at(node,path);
+    if(target.type!=='event'&&target.type!=='rest')throw Error('Can only toggle an event or a rest');
+    return replace(node,path,target.type==='event'?rest():ev(value));
+  }
+  function makeSteps(steps,hits,value){
+    return seq(Array.from({length:steps},(_,i)=>hits.includes(i)?ev(typeof value==='function'?value(i):value):rest()));
+  }
+  // Bjorklund-style distribution consistent with the original prototype.
+  function euclid(pulses,steps){
+    if(!Number.isInteger(pulses)||!Number.isInteger(steps)||steps<1||pulses<0||pulses>steps)throw Error('Invalid Euclidean parameters');
+    if(pulses===0)return Array(steps).fill(false);
+    if(pulses===steps)return Array(steps).fill(true);
+    let on=Array.from({length:pulses},()=>[true]),off=Array.from({length:steps-pulses},()=>[false]);
+    while(Math.min(on.length,off.length)>1){let n=Math.min(on.length,off.length),merge=[];
+      for(let j=0;j<n;j++)merge.push([...on[j],...off[j]]);
+      on=[...merge,...on.slice(n)];off=off.slice(n);
+    }
+    return [...on,...off].flat().slice(0,steps);
+  }
+  function makeManual(node){
+    if(node.type!=='euclidean')return node;
+    const pattern=euclid(node.pulses,node.steps);const children=Array.from({length:node.steps},(_,i)=>pattern[mod(i-node.rotation,node.steps)]?ev(node.value):rest());
+    return seq(children);
+  }
+  // Each descendant interval has exact rational boundaries in the master cycle.
+  function flatten(node,start=frac(0),span=frac(1),path=[]){
+    if(node.type==='sequence'){
+      const dt=divide(span,frac(node.children.length));
+      return node.children.flatMap((child,i)=>flatten(child,add(start,mul(dt,frac(i))),dt,[...path,i]));
+    }
+    if(node.type==='euclidean')return flatten(makeManual(node),start,span,path);
+    return [{start,end:add(start,span),value:node.type==='event'?node.value:null,path,id:node.id}];
+  }
+  const SAFE_VALUE = /^[a-zA-Z0-9#:_+.-]{1,60}$/;
+  function emitMini(node, nested=false){
+    if(node.type==='rest')return '~';
+    if(node.type==='event'){
+      if(!SAFE_VALUE.test(node.value))throw Error('Unsupported event value');
+      return node.value;
+    }
+    if(node.type==='euclidean'){
+      if(!SAFE_VALUE.test(node.value))throw Error('Unsupported Euclidean event');
+      if(node.pulses===0)return '~';
+      return `${node.value}(${node.pulses},${node.steps}${node.rotation?','+node.rotation:''})`;
+    }
+    if(node.type==='sequence'){
+      if(!node.children.length)throw Error('Empty sequence');
+      const text=node.children.map(n=>emitMini(n,true)).join(' ');
+      return nested?'['+text+']':text;
+    }
+    throw Error('Unknown pattern node '+node.type);
+  }
+  // A deliberate, strict subset of Strudel mini-notation; unsupported syntax is rejected.
+  function parseMini(text){
+    const tokens=String(text).match(/\[|\]|[^\s\[\]]+/g)||[];
+    let pos=0;
+    function group(nested,depth){
+      if(depth>8)throw Error('Maximum nesting depth is eight');
+      const children=[];
+      while(pos<tokens.length){let token=tokens[pos++];
+        if(token===']'){if(!nested)throw Error('Unexpected closing bracket');if(!children.length)throw Error('Empty bracket group');return seq(children)}
+        if(token==='['){children.push(group(true,depth+1));continue}
+        if(token==='~'){children.push(rest());continue}
+        const eu=token.match(/^([a-zA-Z0-9#:_+.-]+)\((\d+),(\d+)(?:,(-?\d+))?\)$/);
+        if(eu){const p=+eu[2],s=+eu[3],r=+(eu[4]||0);if(s<1||s>64||p>s)throw Error('Euclidean range 0–64 steps');children.push(euc(eu[1],p,s,r));continue}
+        if(!SAFE_VALUE.test(token))throw Error(`Unsupported token: ${token}`);
+        children.push(ev(token));
+      }
+      if(nested)throw Error('Missing closing bracket');
+      if(!children.length)throw Error('Empty pattern');
+      return seq(children);
+    }
+    return group(false,0);
+  }
+  function cleanComment(value){return String(value||'Untitled').replace(/[\r\n\u2028\u2029]/g,' ').replace(/[^a-zA-Z0-9À-ÿ _.,:\-/]/g,'').slice(0,80)}
+  function emitLane(lane){
+    if(lane.muted)return null;
+    const mini=emitMini(lane.root);
+    const speed=Number(lane.speed)||1;
+    const gain=Number(lane.gain);
+    if(speed<=0||speed>8||!Number.isFinite(gain)||gain<0||gain>2||!Number.isInteger(lane.rotation||0)||Math.abs(lane.rotation||0)>64)throw Error('Invalid lane modifiers');
+    const drum=lane.kind!=='melody';
+    let code=drum?`s(${JSON.stringify(mini)})`:`note(${JSON.stringify(mini)}).s(${JSON.stringify(lane.instrument||'sawtooth')}).lpf(750)`;
+    if(lane.rotation){const n=lane.root.type==='sequence'?lane.root.children.length:lane.root.steps;
+      if(lane.root.type==='euclidean'){
+        // rotation is serialized directly in euclidean mini syntax if editing its own node.
+        // lane.rotation should only be applied to manual sequences.
+        code += `.late(${(lane.rotation/n).toFixed(6)})`;
+      }else code+=`.late(${(lane.rotation/n).toFixed(6)})`;
+    }
+    if(speed>1)code+=`.fast(${speed})`;
+    if(speed<1)code+=`.slow(${1/speed})`;
+    if(lane.reverse)code+='.rev()';
+    if(lane.room){const r=Number(lane.room);if(!Number.isFinite(r)||r<0||r>10)throw Error('Invalid reverb level');code+=`.room(${r.toFixed(2)})`}
+    code+=`.gain(${gain.toFixed(2)})`;
+    return code;
+  }
+  function emitProject(project){
+    const bpm=Number(project.bpm);
+    if(!Number.isFinite(bpm)||bpm<35||bpm>240)throw Error('BPM must be 35–240');
+    const active=project.lanes.map(emitLane).filter(Boolean);
+    const body=active.length?`stack(\n${active.map((s,i)=>`  // ${cleanComment(project.lanes.filter(l=>!l.muted)[i].name)}\n  ${s}`).join(',\n')}\n)`:'silence';
+    return `// Strudel Canvas / ${cleanComment(project.title)}\n// Four beats per visual cycle; edits update the running Strudel pattern.\nsetcpm(${(bpm/4).toFixed(4)})\n${body}`;
+  }
+  function validateNode(node,depth=0){
+    if(depth>12||!node||typeof node!=='object')throw Error('Invalid pattern structure');
+    if(node.type==='sequence'){
+      if(!Array.isArray(node.children)||node.children.length<1||node.children.length>64)throw Error('Invalid sequence length');
+      node.children.forEach(c=>validateNode(c,depth+1));
+    }else if(node.type==='event'){if(!SAFE_VALUE.test(node.value))throw Error('Invalid event value')}
+    else if(node.type==='euclidean'){
+      if(!SAFE_VALUE.test(node.value)||!Number.isInteger(node.pulses)||!Number.isInteger(node.steps)||node.steps<1||node.steps>64||node.pulses<0||node.pulses>node.steps||!Number.isInteger(node.rotation))throw Error('Invalid Euclidean pattern');
+    }else if(node.type!=='rest')throw Error('Unknown node type');
+  }
+  function validateProject(obj){
+    if(!obj||obj.format!=='strudel-canvas-v1'||!Array.isArray(obj.lanes)||obj.lanes.length<1||obj.lanes.length>16)throw Error('Not a Strudel Canvas v1 project');
+    if(!Number.isFinite(+obj.bpm)||obj.bpm<35||obj.bpm>240)throw Error('Invalid BPM');
+    obj.lanes.forEach(l=>{validateNode(l.root);emitLane({...l,muted:false})});
+    return true;
+  }
+  return { ev,rest,seq,euc,mod,frac,add,sub,mul,divide,num,at,replace,split,collapse,toggle,makeSteps,euclid,makeManual,flatten,emitMini,parseMini,emitLane,emitProject,validateNode,validateProject,clone};
+});
