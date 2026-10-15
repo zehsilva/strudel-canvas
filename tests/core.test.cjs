@@ -15,8 +15,8 @@ test('public samples, pitched map and pack generate Strudel',()=>{
   samplePacks:['github:eddyflux/crate']};
  assert.equal(C.validateProject(project),true);
  const strudel=C.emitProject(project);
- assert.match(strudel,/samples\("github:eddyflux\/crate"\)/);
- assert.match(strudel,/"sc_piano": \{/);
+ assert.ok(strudel.includes("samples('github:eddyflux/crate')"));
+ assert.ok(strudel.includes("'sc_piano': { 'c4': 'https://example.com/piano.wav' }"));
  assert.match(strudel,/note\("\[c4,e4\] ~"\)\.s\("sc_piano"\)/);
 });
 test('only public HTTPS sample URLs permitted',()=>{
@@ -26,7 +26,7 @@ test('only public HTTPS sample URLs permitted',()=>{
 test('sampled grand piano includes registration and is not muted by a low-pass filter',()=>{
  const project={format:'strudel-canvas-v1',bpm:120,lanes:[{name:'Keys',kind:'melody',instrument:'piano',root:C.seq([C.ev('c4'),C.chord(['e4','g4']),C.rest()]),gain:.5,speed:1}]};
  const code=C.emitProject(project);
- assert.match(code,/samples\("https:\/\/raw\.githubusercontent\.com\/felixroos\/dough-samples\/main\/piano\.json"\)/);
+ assert.ok(code.includes("samples('https://raw.githubusercontent.com/felixroos/dough-samples/main/piano.json')"));
  assert.match(code,/note\("c4 \[e4,g4\] ~"\)\.s\("piano"\)/);
  assert.doesNotMatch(code,/\.lpf\(750\)/);
 });
