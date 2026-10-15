@@ -170,9 +170,10 @@
     return seq(Array.from({length:arp.steps},(_,i)=>ev(ordered[i%ordered.length])));
   }
   function emitLane(lane){
-    // Keep a stable lane slot when muted. Dropping lanes from stack() shifts
-    // positions and makes unrelated instruments appear to switch on edits.
-    if(lane.muted)return 'silence';
+    // Keep a stable slot with a proven Strudel mini-notation rest Pattern.
+    // Use the documented s('~') constructor rather than a bare identifier:
+    // @strudel/web eval scopes and versions can differ for exports such as silence.
+    if(lane.muted)return 's("~")';
     const mini=emitMini(lane.kind==='melody'?arpeggiateNode(lane.root,lane.arp):lane.root);
     const speed=Number(lane.speed)||1;
     const gain=Number(lane.gain);
