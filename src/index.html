@@ -9,7 +9,7 @@
 <body>
 <main>
 <header>
-  <div class="brand"><div class="brandmark">∿</div><div><h1>strudel canvas <span class="version">/ 1.3</span></h1><p>RECURSIVE PATTERN STUDIO</p></div></div>
+  <div class="brand"><div class="brandmark">∿</div><div><h1>strudel canvas <span class="version">/ 1.4</span></h1><p>RECURSIVE PATTERN STUDIO</p></div></div>
   <div class="header-right"><button class="pill" id="engineBadge" type="button" title="Show engine diagnostics" aria-label="Show engine diagnostics">◌ Loading Strudel…</button><button class="link-button" id="openStrudel">↗ Strudel REPL</button><button class="link-button" id="saveProject">↓ Save project</button></div>
 </header>
 <aside class="app-nav">
@@ -19,9 +19,11 @@
  <button class="nav-card" data-preset="minimal"><span class="emoji">◉</span><span><strong>Minimal pulse</strong><small>Euclidean · 112 BPM</small></span></button></div>
  <div class="nav-section"><div class="section-head"><span class="eyebrow">Workspace</span></div>
  <button class="nav-card" id="composeNav"><span class="emoji">▦</span><span><strong>Visual composition</strong><small>Cycle and recursive lens</small></span></button>
+ <button class="nav-card" id="keysNav"><span class="emoji">♬</span><span><strong>Piano roll</strong><small>Notes · chords · keys</small></span></button>
+ <button class="nav-card" id="soundsNav"><span class="emoji">♫</span><span><strong>Sample library</strong><small>Public URLs · GitHub</small></span></button>
  <button class="nav-card" id="codeNav"><span class="emoji">⌘</span><span><strong>Code bridge</strong><small>Custom code remains separate</small></span></button>
  <button class="nav-card" id="importProject"><span class="emoji">⇧</span><span><strong>Import project</strong><small>Restore .json sketch</small></span></button></div>
- <div class="nav-footer"><b>Pattern-first, not piano-roll-first.</b><br>Double-click a step to subdivide it. Each level divides its parent's time without changing the cycle length.<br><br><span class="kbd">Space</span> Play / stop · <span class="kbd">Esc</span> Up one level</div>
+ <div class="nav-footer"><b>Pattern-first with a piano-roll layer.</b><br>Double-click a step to subdivide it. Each level divides its parent's time without changing the cycle length.<br><br><span class="kbd">Space</span> Play / stop · <span class="kbd">Esc</span> Up one level</div>
 </aside>
 <section class="center">
  <div class="title-row"><div><div class="eyebrow">COMPOSITION / <span id="presetTag">Samba study</span></div><h2 id="projectTitle">Samba, unfolded.</h2><p id="projectDesc">A living rhythm constructed from independent cycles.</p></div><div class="upper-action"><button class="mini-button" id="mutate">✦ Variation</button><button class="mini-button" id="resetPreset">↶ Reset</button></div></div>
@@ -31,15 +33,39 @@
   <p>Loading Strudel from a CDN is separate from general internet connectivity. The visual editor works without this library.</p>
   <pre id="engineDiagText" aria-live="polite"></pre>
  </section>
- <div class="modebar"><div class="tabset"><button class="tab active" data-view="lanes">▦ Lanes</button><button class="tab" data-view="orbit">◉ Orbits</button><button class="tab" data-view="transforms">↗ Transforms</button></div><span class="muted-note">One cycle = four beats · different subdivisions coexist</span></div>
+ <div class="modebar"><div class="tabset"><button class="tab active" data-view="lanes">▦ Lanes</button><button class="tab" data-view="piano">♬ Piano roll</button><button class="tab" data-view="samples">♫ Samples</button><button class="tab" data-view="orbit">◉ Orbits</button><button class="tab" data-view="transforms">↗ Transforms</button></div><span class="muted-note">One cycle = four beats · different subdivisions coexist</span></div>
  <div class="pattern-panel" id="patternPanel">
   <div class="grid-header"><div class="eyebrow">PATTERN LAYERS</div><div class="beat-ruler"><span>1</span><span></span><span></span><span></span><span>2</span><span></span><span></span><span></span><span>3</span><span></span><span></span><span></span><span>4</span><span></span><span></span><span></span></div><div class="eyebrow">CYCLE</div></div>
   <div id="lanes"></div>
-  <div class="grid-bottom"><button class="add-track" id="addLane">＋ Add pattern layer</button><span id="layerCount">5 independent layers</span></div>
+  <div class="grid-bottom"><div class="track-actions"><button class="add-track" id="addLane">＋ Drum lane</button><button class="add-track" id="addKeysLane">＋ Keys lane</button></div><span id="layerCount">5 independent layers</span></div>
   <div class="lens-head"><div><span class="eyebrow">RECURSIVE LENS</span><div class="breadcrumbs" id="crumbs"></div></div><div class="lens-actions"><button id="goUp" class="mini-button">↑ Up</button><button id="dive" class="mini-button">↳ Enter</button><button id="split2" class="mini-button mint-button">⊞ Split ×2</button><button id="split3" class="mini-button">⊞ ×3</button><button id="collapse" class="mini-button">− Collapse</button></div></div>
   <div class="lens-meta"><span id="lensDescription">Choose a step to edit its nested rhythm.</span><span id="focusTime">0–1 cycle</span></div>
   <div class="lens-steps" id="lensSteps"></div>
   <div class="lens-help">Click: toggle event/rest · Double-click: enter or subdivide · Shift+click: split in two. Each cell occupies an equal fraction of its parent.</div>
+ </div>
+ <div id="pianoPanel" class="pattern-panel is-hidden">
+  <div class="piano-header"><div><span class="eyebrow">PIANO ROLL / SELECTED KEYS LANE</span><h3 id="pianoTitle">Keys</h3><p class="muted-note">Click a cell to add/remove a note. Multiple notes in one step create chords. Double-click nested steps in Lanes to edit their subdivision.</p></div><div class="piano-tools"><label class="octave-label">Keyboard range <select id="pianoOctave" class="mini-button"><option value="1">C1–B3</option><option value="2">C2–B4</option><option value="3" selected>C3–B5</option><option value="4">C4–B6</option></select></label><button class="mini-button" id="pianoClear">Clear notes</button><button class="mini-button" id="pianoAddLane">＋ New keys lane</button></div></div>
+  <div id="pianoRoll" class="piano-roll" aria-label="Piano roll editor"></div>
+  <div class="grid-bottom"><span id="pianoRange">C3–B5 · chromatic</span><span id="pianoFocus">Editing 1 cycle</span></div>
+ </div>
+ <div id="samplesPanel" class="pattern-panel is-hidden">
+  <span class="eyebrow">CUSTOM SAMPLE LIBRARY</span><h3>Bring your own sound</h3><p class="muted-note">Use a public HTTPS WAV, MP3, OGG or FLAC link. GitHub <code>/blob/</code> file links automatically convert to the raw-file URL. Audio remains hosted at the source.</p>
+  <div class="sample-form">
+    <label>Sample name <input id="sampleName" placeholder="e.g. conga" maxlength="26" autocomplete="off"></label>
+    <label>Public audio URL <input id="sampleURL" type="url" placeholder="https://github.com/user/repo/blob/main/audio/conga.wav" spellcheck="false"></label>
+    <label>Playback type <select id="sampleMode"><option value="oneshot">One-shot / drums</option><option value="pitched">Pitched / keyboard</option></select></label>
+    <label id="sampleRootLabel" hidden>Recorded note <select id="sampleRoot"><option value="c4">C4</option><option value="a3">A3</option><option value="c3">C3</option><option value="g3">G3</option><option value="c5">C5</option><option value="a4">A4</option></select></label>
+    <button id="addSample" class="wide-action">＋ Add sample</button>
+  </div>
+  <p class="muted-note">Custom aliases use the prefix <code>sc_</code>. Once added, choose the sample from the selected lane’s Source or Keys instrument selector.</p>
+  <div id="sampleList" class="sample-list"></div>
+  <div class="divider-lite"></div>
+  <span class="eyebrow">STRUDEL / GITHUB SAMPLE PACK</span>
+  <p class="muted-note">Load an existing Strudel <code>strudel.json</code> map, or a GitHub repo containing one. After importing, use the alias field below to select a sound from that pack.</p>
+  <div class="sample-form"><label>Pack link <input id="packURL" placeholder="github:owner/repo or https://…/strudel.json" spellcheck="false"></label><button id="addPack" class="wide-action">＋ Register sample pack</button></div>
+  <div id="packList" class="sample-list"></div>
+  <div class="sample-form compact-form"><label>Sound alias from pack <input id="packAlias" placeholder="e.g. conga" spellcheck="false"></label><button id="usePackAlias" class="mini-button">Use on selected lane</button></div>
+  <div class="sample-feedback" id="sampleFeedback" aria-live="polite"></div>
  </div>
  <div id="orbitPanel" class="pattern-panel is-hidden"><div class="eyebrow">CYCLE ORBITS</div><div id="allOrbits" class="all-orbits"></div><div class="grid-bottom"><span>Concentric rings display independent cycle subdivisions.</span><button class="add-track" id="orbitGoBack">Edit pattern →</button></div></div>
  <div id="transformsPanel" class="pattern-panel is-hidden"><div class="eyebrow">FUNCTIONAL PATTERN PIPELINE</div><div class="graph" id="transformGraph"></div><p class="muted-note">Transformations remain symbolic in the generated Strudel expression. The recursive lens preserves structure of nested sequences.</p></div>
@@ -50,7 +76,9 @@
 </section>
 <aside class="right">
  <span class="eyebrow">SELECTED LAYER</span><h3 id="inspectorName">Surdo</h3><p class="desc" id="inspectorDescription">Deep pulse that anchors the pattern.</p><div class="orbit" id="singleOrbit"></div><div class="inspector-head"><b>Pattern controls</b><span id="inspectorMode">Manual</span></div>
- <div class="field"><div class="top"><span>Source / sample</span></div><select id="sourceSound" class="wide-select"><option value="bd">bd · kick</option><option value="sd">sd · snare</option><option value="hh">hh · closed hat</option><option value="oh">oh · open hat</option><option value="rim">rim · rimshot</option><option value="cp">cp · clap</option><option value="lt">lt · low tom</option><option value="c2">c2 · melodic note</option></select></div>
+ <div class="field"><div class="top"><span>Track type</span></div><select id="laneType" class="wide-select"><option value="drum">Drum / sample</option><option value="melody">Keys / pitched notes</option></select></div>
+ <div id="drumSoundField" class="field"><div class="top"><span>Source / sample</span><button type="button" class="tiny-link" id="editSampleLibrary">+ Library</button></div><select id="sourceSound" class="wide-select"></select></div>
+ <div id="keysSoundField" class="field" hidden><div class="top"><span>Keys instrument</span></div><select id="keyInstrument" class="wide-select"></select><button class="wide-action" id="openPiano">♬ Open piano roll</button></div>
  <div class="field"><div class="top"><span>Euclidean pulses</span><b id="pulseValue">3 / 16</b></div><input class="range" type="range" min="0" max="16" value="3" id="pulsesRange"></div>
  <div class="field"><div class="top"><span>Cycle rotation</span><b id="rotationValue">0 steps</b></div><input class="range" type="range" min="-15" max="15" value="0" id="rotationRange"></div>
  <div class="field counter"><span>Root subdivisions</span><div class="stepcounter"><button id="stepsMinus" aria-label="Remove last subdivision">−</button><strong id="stepsValue">16</strong><button id="stepsPlus" aria-label="Add subdivision">+</button></div></div>
