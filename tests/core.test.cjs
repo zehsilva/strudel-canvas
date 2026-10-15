@@ -45,12 +45,12 @@ test('mute keeps original stack slots with no cross-track reassignment',()=>{
  const p={format:'strudel-canvas-v1',bpm:110,lanes:[mk('Kick','bd'),mk('Snare','sd'),mk('Hat','hh')]};
  const original=p.lanes.map(C.emitLane);
  p.lanes[1].muted=true;
- assert.deepEqual(p.lanes.map(C.emitLane),[original[0],'silence',original[2]]);
- assert.match(C.emitProject(p),/\/\/ Snare \(muted\)\n  silence/);
+ assert.deepEqual(p.lanes.map(C.emitLane),[original[0],'s("~")',original[2]]);
+ assert.match(C.emitProject(p),/\/\/ Snare \(muted\)\n  s\(\"~\"\)/);
  p.lanes[1].muted=false;
  assert.deepEqual(p.lanes.map(C.emitLane),original);
  p.lanes.forEach(l=>l.muted=true);
- assert.deepEqual(p.lanes.map(C.emitLane),['silence','silence','silence']);
+ assert.deepEqual(p.lanes.map(C.emitLane),['s("~")','s("~")','s("~")']);
 });
 test('chord arpeggiator preserves original notes with nested timing',()=>{
  const root=C.seq([C.chord(['g4','c4','e4']),C.rest(),C.seq([C.chord(['c3','g3']),C.ev('d3')])]);
@@ -70,8 +70,8 @@ test('arpeggiator affects keys only and mute overrides lane safely',()=>{
  assert.match(C.emitLane(k),/\[g4 e4 c4\]/);
  assert.match(C.emitLane(d),/s\("sd ~"\)/);
  k.muted=true;
- assert.equal(C.emitLane(k),'silence');
- assert.match(C.emitProject(p),/\/\/ Keys \(muted\)\n  silence/);
+ assert.equal(C.emitLane(k),'s("~")');
+ assert.match(C.emitProject(p),/\/\/ Keys \(muted\)\n  s\(\"~\"\)/);
  k.muted=false;
  assert.equal(C.emitMini(k.root),'[c4,e4,g4] ~');
  assert.throws(()=>C.validateArp({mode:'reverse',steps:4,octaves:1}));
