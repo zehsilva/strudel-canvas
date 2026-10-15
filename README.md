@@ -105,4 +105,4 @@ Sample attribution: Salamander Grand Piano V3 by Alexander Holm, CC BY 3.0. Samp
 - **Timing:** arp subdivisions are per chord's step, *not* constant eighth/sixteenth notes globally. A chord in a very short cell will arpeggiate quickly.
 - **Limitations:** Strudel audio that was triggered before a live mute can have a short release/sample tail. Custom code still requires editing its own pattern. Real audio is browser-dependent.
 
-Local verification: `node --test tests/core.test.cjs`; `python tests/test_integration.py`; `python tests/test_mute_arp.py` (the included browser tests simulate the Strudel API and verify generated patterns, not live acoustic output).
+Local verification: `node --test tests/core.test.cjs`; `python tests/test_mute_arp.py` (the included browser tests simulate the Strudel API and verify generated patterns, not live acoustic output).
