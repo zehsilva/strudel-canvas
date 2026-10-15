@@ -139,7 +139,25 @@
     const gain=Number(lane.gain);
     if(speed<=0||speed>8||!Number.isFinite(gain)||gain<0||gain>2||!Number.isInteger(lane.rotation||0)||Math.abs(lane.rotation||0)>64)throw Error('Invalid lane modifiers');
     const drum=lane.kind!=='melody';
-    let code=drum?`s(${JSON.stringify(mini)})`:`note(${JSON.stringify(mini)}).s(${JSON.stringify(lane.instrument||'sawtooth')}).lpf(750)`;
+    // @strudel/web does not register General MIDI soundfonts. Treat historical
+    // gm_* choices as explicit built-in synth approximations, never silent IDs.
+    const patches={
+      gm_piano:'piano',
+      rhodes:'triangle', gm_epiano1:'triangle', gm_epiano2:'sine',
+      organ:'square', gm_organ:'square',
+      bass:'triangle', gm_acoustic_bass:'triangle',
+      vibes:'sine', gm_vibraphone:'sine',
+      musicbox:'sine', gm_music_box:'sine',
+    };
+    const instrument=lane.instrument||'piano';
+    const voice=patches[instrument]||instrument;
+    let code=drum?`s(${JSON.stringify(mini)})`:`note(${JSON.stringify(mini)}).s(${JSON.stringify(voice)})`;
+    // Shape synthesized keyboard sounds, but never low-pass-filter sampled
+    // piano or arbitrary user samples: the old blanket 750 Hz filter hid notes.
+    if(!drum && ['rhodes','gm_epiano1'].includes(instrument))code+='.lpf(3300).attack(.003).decay(.32).sustain(.18).release(.18)';
+    else if(!drum && ['gm_epiano2','vibes','gm_vibraphone','musicbox','gm_music_box'].includes(instrument))code+='.attack(.002).decay(.4).sustain(.08).release(.2)';
+    else if(!drum && ['organ','gm_organ'].includes(instrument))code+='.lpf(2200).attack(.02).release(.15)';
+    else if(!drum && ['bass','gm_acoustic_bass'].includes(instrument))code+='.lpf(1400).attack(.002).decay(.3).sustain(.15).release(.12)';
     if(lane.rotation){const n=lane.root.type==='sequence'?lane.root.children.length:lane.root.steps;
       if(lane.root.type==='euclidean'){
         // rotation is serialized directly in euclidean mini syntax if editing its own node.
@@ -181,6 +199,10 @@
     validateSamples(project);
     const custom=project.customSamples||[];
     const packStatements=(project.samplePacks||[]).map(u=>`samples(${JSON.stringify(u)})`);
+    // In the reference REPL this manifest loads automatically. @strudel/web
+    // starts with no external samples, so exports must include it explicitly.
+    if(project.lanes.some(l=>!l.muted&&l.kind==='melody'&&(!l.instrument||['piano','gm_piano'].includes(l.instrument))))
+      packStatements.unshift('samples("https://raw.githubusercontent.com/felixroos/dough-samples/main/piano.json")');
     const map=Object.fromEntries(custom.map(s=>[s.name,s.pitched?{[s.baseNote||'c4']:s.url}:s.url]));
     if(custom.length)packStatements.push(`samples(${JSON.stringify(map,null,2)})`);
     const declarations=packStatements.length?packStatements.join('\n')+'\n':'';
