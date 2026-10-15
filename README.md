@@ -69,3 +69,19 @@ Note: Suspended Web Audio freezes already-active voices; on resuming, the residu
 ```bash
 python src/tests/audio_context_stop.py
 ```
+
+## v1.4 · Custom sounds and piano roll
+
+Open the **Samples** tab to register a publicly accessible HTTPS WAV/MP3/OGG/FLAC audio file. GitHub **blob/file** URLs are converted into direct raw-file URLs; plain GitHub repository pages are not audio files. Custom audio aliases use `sc_*` names and are saved with the project JSON. Select a custom sample in the right inspector, or click **Use on lane**.
+
+For pitched one-shot files, choose **Pitched / keyboard** and the note the sample was recorded at (e.g. C4). The generated Strudel code includes a pitched `samples({name: {c4: url}})` registration and supports `note(...).s('sc_name')`.
+
+Import Strudel sample packs with `github:user/repo[/branch]`, a public URL to `strudel.json`, or a plain GitHub repository link if it contains a root manifest. Select a sound by typing an alias declared by the pack.
+
+Add a **Keys lane**, select the **Piano roll** tab, pick a piano / Rhodes / synth / other keys instrument, and click grid cells to add notes. Multiple notes at one step create a chord. Use the **Keyboard range** selector for lower or higher octaves; recursive subdivisions can be edited from the Lanes lens.
+
+**Remote audio limitations:** A publicly viewable file may still fail due to missing CORS headers, failed downloads, unsupported encodings, or removed files. Strudel loads samples lazily, so a newly selected sound may take a moment to become audible. The project stores URLs, not audio bytes.
+
+**Tests:** `node --test tests/core.test.cjs`; browser smoke tests use a simulated engine and do not guarantee that a particular remote sample is accessible or that live WebAudio works on every browser.
+
+**License:** The integrated `@strudel/web` package is AGPL-3.0-or-later; see the [upstream license guidance](https://strudel.cc/technical-manual/project-start/).
