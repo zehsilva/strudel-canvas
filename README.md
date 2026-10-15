@@ -85,3 +85,11 @@ Add a **Keys lane**, select the **Piano roll** tab, pick a piano / Rhodes / synt
 **Tests:** `node --test tests/core.test.cjs`; browser smoke tests use a simulated engine and do not guarantee that a particular remote sample is accessible or that live WebAudio works on every browser.
 
 **License:** The integrated `@strudel/web` package is AGPL-3.0-or-later; see the [upstream license guidance](https://strudel.cc/technical-manual/project-start/).
+
+## v1.5 · Piano playback fix
+
+The `@strudel/web` bundle starts with no external instrument sample maps. Strudel Canvas now preloads the official Salamander Grand Piano sample map from [felixroos/dough-samples](https://github.com/felixroos/dough-samples/blob/main/piano.json) alongside the Dirt drum map, before evaluating music. Exported code includes the piano registration when needed. Other keyboard choices now use named **synthesized approximations**, rather than unregistered `gm_*` soundfont identifiers. Saved v1.4 sketches using old GM labels are automatically mapped to audible synth voices. An unintended `lpf(750)` on all pitched instruments was also removed.
+
+The acoustic piano requires HTTPS access to `raw.githubusercontent.com`; the triangle/sine keyboard voices are completely synthesized. First piano playback may take longer while Strudel downloads MP3 samples. For missing sound, inspect the Network panel for errors loading `piano.json` or MP3 files.
+
+Sample attribution: Salamander Grand Piano V3 by Alexander Holm, CC BY 3.0. Sample data is not redistributed in this repository.
