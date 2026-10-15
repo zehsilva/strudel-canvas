@@ -118,3 +118,13 @@ Local verification: `node --test tests/core.test.cjs`; `python tests/test_mute_a
 - **All muted:** The transport explicitly says when every visual lane is muted.
 
 Verification: `node --test tests/core.test.cjs`. Browser tests of the silent evaluator, mixer, arpeggiator and Stop are simulated; live browser audio has not been independently auditioned.
+
+## v1.8 — Fix Strudel mini-notation parsing of sample URLs
+
+Strudel's JavaScript transpiler interprets **double-quoted string literals as musical mini-notation**. Previously the third generated line, `samples("https://raw.githubusercontent.com/.../piano.json")`, tried to parse an HTTPS URL as a musical pattern and produced `[mini] parse error ... "/" found`, leaving the audio scheduler silent.
+
+Sample manifest URLs, `github:` pack URLs, custom sample names, base-note keys, and sample-map URL values now use **single-quoted JavaScript strings** in the generated source. Double quotes are retained only where intended for Strudel musical mini-notation, e.g. `note("c4 e4 g4")` or `s("bd ~ sd")`.
+
+Verified with 10 local core tests, including parser-safe source generation, and browser integration tests for playback, piano roll, custom samples, mute/unmute, arpeggiator, Stop, and swallowed evaluation errors. Live acoustic output still needs verification in the browser.
+
+Run `node --test tests/*.test.cjs` to guard against recurrence.
