@@ -44,12 +44,57 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
 .engine-diagnostics p{font-size:12px;color:#c1b7b1;line-height:1.5;margin:10px 0}
 .engine-diagnostics pre{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;max-height:210px;overflow:auto;min-height:0;padding:12px;background:#1a1920;border-radius:8px;font-size:11px;color:#e4d9d2}
 
+/* v1.4: sample library and chromatic piano roll */
+[hidden]{display:none!important}
+.track-actions{display:flex;gap:8px;flex-wrap:wrap}
+.track-actions .add-track{white-space:nowrap}
+.piano-header{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:16px}
+.piano-header h3,.pattern-panel h3{margin:8px 0;color:#eff2f7;font-size:17px}
+.piano-header p{max-width:500px;line-height:1.5}
+.piano-tools{display:flex;gap:7px;flex-wrap:wrap;justify-content:end}
+.piano-roll{--key-width:70px;max-height:540px;overflow:auto;background:#171b22;border:1px solid #3a4350;border-radius:11px;position:relative;scrollbar-color:#556473 #171b22}
+.piano-row{display:grid;grid-template-columns:var(--key-width) minmax(490px,1fr);height:24px;align-items:stretch}
+.piano-row+.piano-row{border-top:1px solid #313845}
+.piano-key{border:0;border-right:2px solid #384250;border-radius:0;position:sticky;left:0;z-index:2;text-align:left;padding:0 8px;font-size:11px;font-weight:600;color:#1b2832;background:#d5dbe0}
+.piano-key.sharp{background:#313b48;color:#f2f4fc;border-right-color:#637083}
+.piano-key.root{box-shadow:inset 4px 0 0 #89e3b5}
+.piano-grid{display:grid;gap:1px;min-width:490px;background:#232a34}
+.piano-cell{background:#27303a;border:0;border-radius:0;padding:0;min-width:0;position:relative}
+.piano-row.sharp .piano-cell{background:#222833}
+.piano-cell.beat{box-shadow:inset 2px 0 0 #56606d}
+.piano-cell:hover{background:#526354!important}
+.piano-cell.on{background:#9cf1be!important;box-shadow:inset 0 -3px 0 #427a59}
+.piano-cell.on.sharp-on{background:#8bb4ed!important}
+.piano-cell.nested{background:repeating-linear-gradient(45deg,#39314a,#39314a 4px,#302a40 4px,#302a40 8px)}
+.piano-cell:focus-visible{outline:2px solid white;outline-offset:-2px;z-index:1}
+.piano-info{display:flex;justify-content:space-between;gap:15px;color:#8495a5;font-size:11px;margin:10px 0}
+.sample-form{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;padding:16px 0}
+.sample-form label{display:flex;gap:7px;flex-direction:column;color:#b9c5d1;font-size:11px;flex:1 1 160px;min-width:125px}
+.sample-form label:has(#sampleURL){flex:2 1 270px}
+.sample-form input,.sample-form select{border:1px solid #4b5869;border-radius:8px;color:#f1f5f8;background:#12171d;padding:10px;font-size:12px;width:100%}
+.sample-form button{padding:10px 12px;margin:0;width:auto;min-height:36px}
+.sample-list{display:flex;flex-direction:column;gap:8px;margin:10px 0 18px}
+.sample-item{display:flex;align-items:center;flex-wrap:wrap;gap:10px;background:#252b36;border:1px solid #35414d;border-radius:10px;padding:11px 12px}
+.sample-item div{flex:1;min-width:150px}
+.sample-item b{display:block;font-size:12px;color:#dffcea}
+.sample-item small{display:block;font-size:11px;color:#9ba9b7;word-break:break-all;margin-top:4px}
+.sample-item button{background:#293c38;border:1px solid #486054;border-radius:8px;color:#c3ebd1;padding:7px 10px;font-size:11px}
+.sample-item button.remove{color:#f4b4b4;border-color:#634747;background:#31282c}
+.sample-feedback{font-size:12px;color:#ffce94;min-height:20px;line-height:1.5}
+.tiny-link{border:0;background:none;color:#9cf1be;font-size:11px;padding:0;cursor:pointer}
+.compact-form{padding-top:3px}
+#openPiano{margin-top:8px}
+#keysSoundField .wide-action{font-size:11px}
+@media(max-width:1040px){.piano-header{flex-direction:column}.piano-tools{justify-content:flex-start}}
+
+.octave-label{display:flex;align-items:center;gap:7px;font-size:11px;color:#a3b0c0}.octave-label select{padding:8px}.piano-tools{align-items:center}
+
 </style>
 </head>
 <body>
 <main>
 <header>
-  <div class="brand"><div class="brandmark">∿</div><div><h1>strudel canvas <span class="version">/ 1.3</span></h1><p>RECURSIVE PATTERN STUDIO</p></div></div>
+  <div class="brand"><div class="brandmark">∿</div><div><h1>strudel canvas <span class="version">/ 1.4</span></h1><p>RECURSIVE PATTERN STUDIO</p></div></div>
   <div class="header-right"><button class="pill" id="engineBadge" type="button" title="Show engine diagnostics" aria-label="Show engine diagnostics">◌ Loading Strudel…</button><button class="link-button" id="openStrudel">↗ Strudel REPL</button><button class="link-button" id="saveProject">↓ Save project</button></div>
 </header>
 <aside class="app-nav">
@@ -59,9 +104,11 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
  <button class="nav-card" data-preset="minimal"><span class="emoji">◉</span><span><strong>Minimal pulse</strong><small>Euclidean · 112 BPM</small></span></button></div>
  <div class="nav-section"><div class="section-head"><span class="eyebrow">Workspace</span></div>
  <button class="nav-card" id="composeNav"><span class="emoji">▦</span><span><strong>Visual composition</strong><small>Cycle and recursive lens</small></span></button>
+ <button class="nav-card" id="keysNav"><span class="emoji">♬</span><span><strong>Piano roll</strong><small>Notes · chords · keys</small></span></button>
+ <button class="nav-card" id="soundsNav"><span class="emoji">♫</span><span><strong>Sample library</strong><small>Public URLs · GitHub</small></span></button>
  <button class="nav-card" id="codeNav"><span class="emoji">⌘</span><span><strong>Code bridge</strong><small>Custom code remains separate</small></span></button>
  <button class="nav-card" id="importProject"><span class="emoji">⇧</span><span><strong>Import project</strong><small>Restore .json sketch</small></span></button></div>
- <div class="nav-footer"><b>Pattern-first, not piano-roll-first.</b><br>Double-click a step to subdivide it. Each level divides its parent's time without changing the cycle length.<br><br><span class="kbd">Space</span> Play / stop · <span class="kbd">Esc</span> Up one level</div>
+ <div class="nav-footer"><b>Pattern-first with a piano-roll layer.</b><br>Double-click a step to subdivide it. Each level divides its parent's time without changing the cycle length.<br><br><span class="kbd">Space</span> Play / stop · <span class="kbd">Esc</span> Up one level</div>
 </aside>
 <section class="center">
  <div class="title-row"><div><div class="eyebrow">COMPOSITION / <span id="presetTag">Samba study</span></div><h2 id="projectTitle">Samba, unfolded.</h2><p id="projectDesc">A living rhythm constructed from independent cycles.</p></div><div class="upper-action"><button class="mini-button" id="mutate">✦ Variation</button><button class="mini-button" id="resetPreset">↶ Reset</button></div></div>
@@ -71,15 +118,39 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
   <p>Loading Strudel from a CDN is separate from general internet connectivity. The visual editor works without this library.</p>
   <pre id="engineDiagText" aria-live="polite"></pre>
  </section>
- <div class="modebar"><div class="tabset"><button class="tab active" data-view="lanes">▦ Lanes</button><button class="tab" data-view="orbit">◉ Orbits</button><button class="tab" data-view="transforms">↗ Transforms</button></div><span class="muted-note">One cycle = four beats · different subdivisions coexist</span></div>
+ <div class="modebar"><div class="tabset"><button class="tab active" data-view="lanes">▦ Lanes</button><button class="tab" data-view="piano">♬ Piano roll</button><button class="tab" data-view="samples">♫ Samples</button><button class="tab" data-view="orbit">◉ Orbits</button><button class="tab" data-view="transforms">↗ Transforms</button></div><span class="muted-note">One cycle = four beats · different subdivisions coexist</span></div>
  <div class="pattern-panel" id="patternPanel">
   <div class="grid-header"><div class="eyebrow">PATTERN LAYERS</div><div class="beat-ruler"><span>1</span><span></span><span></span><span></span><span>2</span><span></span><span></span><span></span><span>3</span><span></span><span></span><span></span><span>4</span><span></span><span></span><span></span></div><div class="eyebrow">CYCLE</div></div>
   <div id="lanes"></div>
-  <div class="grid-bottom"><button class="add-track" id="addLane">＋ Add pattern layer</button><span id="layerCount">5 independent layers</span></div>
+  <div class="grid-bottom"><div class="track-actions"><button class="add-track" id="addLane">＋ Drum lane</button><button class="add-track" id="addKeysLane">＋ Keys lane</button></div><span id="layerCount">5 independent layers</span></div>
   <div class="lens-head"><div><span class="eyebrow">RECURSIVE LENS</span><div class="breadcrumbs" id="crumbs"></div></div><div class="lens-actions"><button id="goUp" class="mini-button">↑ Up</button><button id="dive" class="mini-button">↳ Enter</button><button id="split2" class="mini-button mint-button">⊞ Split ×2</button><button id="split3" class="mini-button">⊞ ×3</button><button id="collapse" class="mini-button">− Collapse</button></div></div>
   <div class="lens-meta"><span id="lensDescription">Choose a step to edit its nested rhythm.</span><span id="focusTime">0–1 cycle</span></div>
   <div class="lens-steps" id="lensSteps"></div>
   <div class="lens-help">Click: toggle event/rest · Double-click: enter or subdivide · Shift+click: split in two. Each cell occupies an equal fraction of its parent.</div>
+ </div>
+ <div id="pianoPanel" class="pattern-panel is-hidden">
+  <div class="piano-header"><div><span class="eyebrow">PIANO ROLL / SELECTED KEYS LANE</span><h3 id="pianoTitle">Keys</h3><p class="muted-note">Click a cell to add/remove a note. Multiple notes in one step create chords. Double-click nested steps in Lanes to edit their subdivision.</p></div><div class="piano-tools"><label class="octave-label">Keyboard range <select id="pianoOctave" class="mini-button"><option value="1">C1–B3</option><option value="2">C2–B4</option><option value="3" selected>C3–B5</option><option value="4">C4–B6</option></select></label><button class="mini-button" id="pianoClear">Clear notes</button><button class="mini-button" id="pianoAddLane">＋ New keys lane</button></div></div>
+  <div id="pianoRoll" class="piano-roll" aria-label="Piano roll editor"></div>
+  <div class="grid-bottom"><span id="pianoRange">C3–B5 · chromatic</span><span id="pianoFocus">Editing 1 cycle</span></div>
+ </div>
+ <div id="samplesPanel" class="pattern-panel is-hidden">
+  <span class="eyebrow">CUSTOM SAMPLE LIBRARY</span><h3>Bring your own sound</h3><p class="muted-note">Use a public HTTPS WAV, MP3, OGG or FLAC link. GitHub <code>/blob/</code> file links automatically convert to the raw-file URL. Audio remains hosted at the source.</p>
+  <div class="sample-form">
+    <label>Sample name <input id="sampleName" placeholder="e.g. conga" maxlength="26" autocomplete="off"></label>
+    <label>Public audio URL <input id="sampleURL" type="url" placeholder="https://github.com/user/repo/blob/main/audio/conga.wav" spellcheck="false"></label>
+    <label>Playback type <select id="sampleMode"><option value="oneshot">One-shot / drums</option><option value="pitched">Pitched / keyboard</option></select></label>
+    <label id="sampleRootLabel" hidden>Recorded note <select id="sampleRoot"><option value="c4">C4</option><option value="a3">A3</option><option value="c3">C3</option><option value="g3">G3</option><option value="c5">C5</option><option value="a4">A4</option></select></label>
+    <button id="addSample" class="wide-action">＋ Add sample</button>
+  </div>
+  <p class="muted-note">Custom aliases use the prefix <code>sc_</code>. Once added, choose the sample from the selected lane’s Source or Keys instrument selector.</p>
+  <div id="sampleList" class="sample-list"></div>
+  <div class="divider-lite"></div>
+  <span class="eyebrow">STRUDEL / GITHUB SAMPLE PACK</span>
+  <p class="muted-note">Load an existing Strudel <code>strudel.json</code> map, or a GitHub repo containing one. After importing, use the alias field below to select a sound from that pack.</p>
+  <div class="sample-form"><label>Pack link <input id="packURL" placeholder="github:owner/repo or https://…/strudel.json" spellcheck="false"></label><button id="addPack" class="wide-action">＋ Register sample pack</button></div>
+  <div id="packList" class="sample-list"></div>
+  <div class="sample-form compact-form"><label>Sound alias from pack <input id="packAlias" placeholder="e.g. conga" spellcheck="false"></label><button id="usePackAlias" class="mini-button">Use on selected lane</button></div>
+  <div class="sample-feedback" id="sampleFeedback" aria-live="polite"></div>
  </div>
  <div id="orbitPanel" class="pattern-panel is-hidden"><div class="eyebrow">CYCLE ORBITS</div><div id="allOrbits" class="all-orbits"></div><div class="grid-bottom"><span>Concentric rings display independent cycle subdivisions.</span><button class="add-track" id="orbitGoBack">Edit pattern →</button></div></div>
  <div id="transformsPanel" class="pattern-panel is-hidden"><div class="eyebrow">FUNCTIONAL PATTERN PIPELINE</div><div class="graph" id="transformGraph"></div><p class="muted-note">Transformations remain symbolic in the generated Strudel expression. The recursive lens preserves structure of nested sequences.</p></div>
@@ -90,7 +161,9 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
 </section>
 <aside class="right">
  <span class="eyebrow">SELECTED LAYER</span><h3 id="inspectorName">Surdo</h3><p class="desc" id="inspectorDescription">Deep pulse that anchors the pattern.</p><div class="orbit" id="singleOrbit"></div><div class="inspector-head"><b>Pattern controls</b><span id="inspectorMode">Manual</span></div>
- <div class="field"><div class="top"><span>Source / sample</span></div><select id="sourceSound" class="wide-select"><option value="bd">bd · kick</option><option value="sd">sd · snare</option><option value="hh">hh · closed hat</option><option value="oh">oh · open hat</option><option value="rim">rim · rimshot</option><option value="cp">cp · clap</option><option value="lt">lt · low tom</option><option value="c2">c2 · melodic note</option></select></div>
+ <div class="field"><div class="top"><span>Track type</span></div><select id="laneType" class="wide-select"><option value="drum">Drum / sample</option><option value="melody">Keys / pitched notes</option></select></div>
+ <div id="drumSoundField" class="field"><div class="top"><span>Source / sample</span><button type="button" class="tiny-link" id="editSampleLibrary">+ Library</button></div><select id="sourceSound" class="wide-select"></select></div>
+ <div id="keysSoundField" class="field" hidden><div class="top"><span>Keys instrument</span></div><select id="keyInstrument" class="wide-select"></select><button class="wide-action" id="openPiano">♬ Open piano roll</button></div>
  <div class="field"><div class="top"><span>Euclidean pulses</span><b id="pulseValue">3 / 16</b></div><input class="range" type="range" min="0" max="16" value="3" id="pulsesRange"></div>
  <div class="field"><div class="top"><span>Cycle rotation</span><b id="rotationValue">0 steps</b></div><input class="range" type="range" min="-15" max="15" value="0" id="rotationRange"></div>
  <div class="field counter"><span>Root subdivisions</span><div class="stepcounter"><button id="stepsMinus" aria-label="Remove last subdivision">−</button><strong id="stepsValue">16</strong><button id="stepsPlus" aria-label="Add subdivision">+</button></div></div>
@@ -185,6 +258,11 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
   let counter = 0;
   const id = () => `n${++counter}`;
   const ev = value => ({ id: id(), type: 'event', value: String(value) });
+  const NOTE = /^[a-g](?:#|b)?[0-8]$/i;
+  const chord = notes => ({id:id(),type:'chord',notes:[...new Set(notes)].sort((a,b)=>midi(a)-midi(b))});
+  function midi(pitch){const m=String(pitch).match(/^([a-g])([#b]?)([0-8])$/i);if(!m)throw Error('Invalid note: '+pitch);const nums={c:0,d:2,e:4,f:5,g:7,a:9,b:11};return (+m[3]+1)*12+nums[m[1].toLowerCase()]+(m[2]==='#'?1:m[2]==='b'?-1:0)}
+  function flipNote(node,path,pitch){if(!NOTE.test(pitch))throw Error('Invalid piano pitch');const target=at(node,path);if(target.type==='sequence'||target.type==='euclidean')throw Error('Enter nested step to edit notes');let notes=target.type==='chord'?target.notes.slice():target.type==='event'&&NOTE.test(target.value)?[target.value]:[];notes=notes.includes(pitch)?notes.filter(n=>n!==pitch):[...notes,pitch];return replace(node,path,notes.length>1?chord(notes):notes.length===1?ev(notes[0]):rest())}
+
   const rest = () => ({ id: id(), type: 'rest' });
   const seq = children => ({ id: id(), type: 'sequence', children });
   const euc = (value,pulses,steps,rotation=0) => ({id:id(),type:'euclidean',value,pulses,steps,rotation});
@@ -222,8 +300,8 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
   }
   function toggle(node,path,value){
     const target=at(node,path);
-    if(target.type!=='event'&&target.type!=='rest')throw Error('Can only toggle an event or a rest');
-    return replace(node,path,target.type==='event'?rest():ev(value));
+    if(target.type!=='event'&&target.type!=='rest'&&target.type!=='chord')throw Error('Can only toggle an event, chord or a rest');
+    return replace(node,path,target.type==='rest'?ev(value):rest());
   }
   function makeSteps(steps,hits,value){
     return seq(Array.from({length:steps},(_,i)=>hits.includes(i)?ev(typeof value==='function'?value(i):value):rest()));
@@ -252,7 +330,7 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
       return node.children.flatMap((child,i)=>flatten(child,add(start,mul(dt,frac(i))),dt,[...path,i]));
     }
     if(node.type==='euclidean')return flatten(makeManual(node),start,span,path);
-    return [{start,end:add(start,span),value:node.type==='event'?node.value:null,path,id:node.id}];
+    return [{start,end:add(start,span),value:node.type==='event'?node.value:node.type==='chord'?node.notes.join(','):null,path,id:node.id}];
   }
   const SAFE_VALUE = /^[a-zA-Z0-9#:_+.-]{1,60}$/;
   function emitMini(node, nested=false){
@@ -260,6 +338,10 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
     if(node.type==='event'){
       if(!SAFE_VALUE.test(node.value))throw Error('Unsupported event value');
       return node.value;
+    }
+    if(node.type==='chord'){
+      if(!Array.isArray(node.notes)||node.notes.length<2||node.notes.length>12||node.notes.some(n=>!NOTE.test(n)))throw Error('Invalid chord');
+      return '['+node.notes.join(',')+']';
     }
     if(node.type==='euclidean'){
       if(!SAFE_VALUE.test(node.value))throw Error('Unsupported Euclidean event');
@@ -282,7 +364,11 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
       const children=[];
       while(pos<tokens.length){let token=tokens[pos++];
         if(token===']'){if(!nested)throw Error('Unexpected closing bracket');if(!children.length)throw Error('Empty bracket group');return seq(children)}
-        if(token==='['){children.push(group(true,depth+1));continue}
+        if(token==='['){
+          const noteList=(tokens[pos]||'').split(',');
+          if(noteList.length>1&&noteList.every(n=>NOTE.test(n))&&tokens[pos+1]===']'){pos+=2;children.push(chord(noteList));continue}
+          children.push(group(true,depth+1));continue
+        }
         if(token==='~'){children.push(rest());continue}
         const eu=token.match(/^([a-zA-Z0-9#:_+.-]+)\((\d+),(\d+)(?:,(-?\d+))?\)$/);
         if(eu){const p=+eu[2],s=+eu[3],r=+(eu[4]||0);if(s<1||s>64||p>s)throw Error('Euclidean range 0–64 steps');children.push(euc(eu[1],p,s,r));continue}
@@ -318,12 +404,39 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
     code+=`.gain(${gain.toFixed(2)})`;
     return code;
   }
+  function validateSampleURL(url,pack=false){
+    if(typeof url!=='string'||url.length>2048)throw Error('Invalid sample URL');
+    // Strudel's github shortcut is only available for Strudel sample packs.
+    if(pack&&/^github:[a-z0-9_.-]+\/[a-z0-9_.-]+(?:\/[a-z0-9_.\/-]+)?$/i.test(url))return url;
+    let u;
+    try{u=new URL(url)}catch(_){throw Error('Use a public HTTPS URL')}
+    if(u.protocol!=='https:'||u.username||u.password||!u.hostname||/\s/.test(url))throw Error('Sample URL must be public HTTPS');
+    return u.href;
+  }
+  function validateSamples(project){
+    const a=project.customSamples||[];const packs=project.samplePacks||[];
+    if(!Array.isArray(a)||a.length>32||!Array.isArray(packs)||packs.length>12)throw Error('Too many samples or sample packs');
+    const names=new Set();
+    for(const sample of a){
+      if(!sample||typeof sample.name!=='string'||!/^sc_[a-z0-9_]{1,28}$/.test(sample.name)||names.has(sample.name))throw Error('Invalid or duplicate sample alias (sc_name)');
+      names.add(sample.name);validateSampleURL(sample.url);
+      if(sample.pitched && !NOTE.test(sample.baseNote||'c4'))throw Error('Invalid sample base note');
+    }
+    for(const url of packs)validateSampleURL(url,true);
+    return true;
+  }
   function emitProject(project){
     const bpm=Number(project.bpm);
     if(!Number.isFinite(bpm)||bpm<35||bpm>240)throw Error('BPM must be 35–240');
+    validateSamples(project);
+    const custom=project.customSamples||[];
+    const packStatements=(project.samplePacks||[]).map(u=>`samples(${JSON.stringify(u)})`);
+    const map=Object.fromEntries(custom.map(s=>[s.name,s.pitched?{[s.baseNote||'c4']:s.url}:s.url]));
+    if(custom.length)packStatements.push(`samples(${JSON.stringify(map,null,2)})`);
+    const declarations=packStatements.length?packStatements.join('\n')+'\n':'';
     const active=project.lanes.map(emitLane).filter(Boolean);
     const body=active.length?`stack(\n${active.map((s,i)=>`  // ${cleanComment(project.lanes.filter(l=>!l.muted)[i].name)}\n  ${s}`).join(',\n')}\n)`:'silence';
-    return `// Strudel Canvas / ${cleanComment(project.title)}\n// Four beats per visual cycle; edits update the running Strudel pattern.\nsetcpm(${(bpm/4).toFixed(4)})\n${body}`;
+    return `// Strudel Canvas / ${cleanComment(project.title)}\n// Four beats per visual cycle; edits update the running Strudel pattern.\n${declarations}setcpm(${(bpm/4).toFixed(4)})\n${body}`;
   }
   function validateNode(node,depth=0){
     if(depth>12||!node||typeof node!=='object')throw Error('Invalid pattern structure');
@@ -331,6 +444,7 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
       if(!Array.isArray(node.children)||node.children.length<1||node.children.length>64)throw Error('Invalid sequence length');
       node.children.forEach(c=>validateNode(c,depth+1));
     }else if(node.type==='event'){if(!SAFE_VALUE.test(node.value))throw Error('Invalid event value')}
+    else if(node.type==='chord'){if(!Array.isArray(node.notes)||node.notes.length<2||node.notes.length>12||new Set(node.notes).size!==node.notes.length||node.notes.some(n=>!NOTE.test(n)))throw Error('Invalid chord')}
     else if(node.type==='euclidean'){
       if(!SAFE_VALUE.test(node.value)||!Number.isInteger(node.pulses)||!Number.isInteger(node.steps)||node.steps<1||node.steps>64||node.pulses<0||node.pulses>node.steps||!Number.isInteger(node.rotation))throw Error('Invalid Euclidean pattern');
     }else if(node.type!=='rest')throw Error('Unknown node type');
@@ -338,10 +452,11 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
   function validateProject(obj){
     if(!obj||obj.format!=='strudel-canvas-v1'||!Array.isArray(obj.lanes)||obj.lanes.length<1||obj.lanes.length>16)throw Error('Not a Strudel Canvas v1 project');
     if(!Number.isFinite(+obj.bpm)||obj.bpm<35||obj.bpm>240)throw Error('Invalid BPM');
+    validateSamples(obj);
     obj.lanes.forEach(l=>{validateNode(l.root);emitLane({...l,muted:false})});
     return true;
   }
-  return { ev,rest,seq,euc,mod,frac,add,sub,mul,divide,num,at,replace,split,collapse,toggle,makeSteps,euclid,makeManual,flatten,emitMini,parseMini,emitLane,emitProject,validateNode,validateProject,clone};
+  return { ev,chord,flipNote,midi,rest,seq,euc,mod,frac,add,sub,mul,divide,num,at,replace,split,collapse,toggle,makeSteps,euclid,makeManual,flatten,emitMini,parseMini,emitLane,emitProject,validateNode,validateProject,validateSampleURL,validateSamples,clone};
 });
 
 </script>
@@ -353,7 +468,13 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
   const E = window.StrudelCanvasEngineLoader;
   const $ = id => document.getElementById(id);
   const colors = { bd:'#9cebb7',sd:'#bb9ffc',hh:'#83caff',oh:'#f69ac0',rim:'#ffbd7c',cp:'#f9b0bd',lt:'#d9aaff',c2:'#f5ce83' };
-  const makeLane=(name,sound,steps,hits,description,kind='drum')=>({id:name.toLowerCase().replace(/\W/g,'-'),name,sound,kind,description,root:C.makeSteps(steps,hits,kind==='melody' ? i=>['c2','g2','eb2','bb1'][i%4]:sound),rotation:0,speed:1,gain:sound==='hh'?.35:sound==='bd'?.82:kind==='melody'?.26:.55,reverse:false,muted:false,room:0});
+  const drumSources={bd:'Kick',sd:'Snare',hh:'Closed hat',oh:'Open hat',rim:'Rimshot',cp:'Clap',lt:'Low tom',sh:'Shaker',cb:'Cowbell',perc:'Percussion'};
+  const keysSources={piano:'Acoustic piano',gm_epiano1:'Electric piano / Rhodes',gm_epiano2:'Electric piano 2',gm_acoustic_bass:'Acoustic bass',gm_organ:'Organ',gm_vibraphone:'Vibraphone',gm_music_box:'Music box',triangle:'Triangle synth',sine:'Sine synth',sawtooth:'Saw synth',square:'Square synth'};
+  const pianoNotes=(octave)=>Array.from({length:36},(_,i)=>{const midi=(octave+4)*12-1-i;const names=['c','c#','d','eb','e','f','f#','g','ab','a','bb','b'];return names[midi%12]+(Math.floor(midi/12)-1)});
+  const sampleLibrary=()=>project.customSamples||[];
+  const packs=()=>project.samplePacks||[];
+
+  const makeLane=(name,sound,steps,hits,description,kind='drum')=>({id:name.toLowerCase().replace(/\W/g,'-'),name,sound,kind,description,root:C.makeSteps(steps,hits,kind==='melody' ? i=>['c2','g2','eb2','bb1'][i%4]:sound),rotation:0,instrument:kind==='melody'?'piano':undefined,speed:1,gain:sound==='hh'?.35:sound==='bd'?.82:kind==='melody'?.26:.55,reverse:false,muted:false,room:0});
   function makePreset(key){
     if(key==='broken')return {format:'strudel-canvas-v1',title:'Broken, connected.',description:'Interlocking pulses across mismatched subdivisions.',bpm:128,lanes:[
       makeLane('Kick','bd',16,[0,3,7,10,14],'Asymmetric low-end rhythm.'),
@@ -447,14 +568,15 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
   }
   function selectLane(i){selected=i;focus=[];picked=0;render()}
   function setView(v){view=v;document.querySelectorAll('[data-view]').forEach(el=>el.classList.toggle('active',el.dataset.view===v));
-    $('patternPanel').classList.toggle('is-hidden',v!=='lanes');$('orbitPanel').classList.toggle('is-hidden',v!=='orbit');$('transformsPanel').classList.toggle('is-hidden',v!=='transforms');
-    if(v==='orbit')drawAllOrbits();if(v==='transforms')renderGraph()}
+    for(const [id,kind] of [['patternPanel','lanes'],['pianoPanel','piano'],['samplesPanel','samples'],['orbitPanel','orbit'],['transformsPanel','transforms']])$(id).classList.toggle('is-hidden',v!==kind);
+    if(v==='orbit')drawAllOrbits();if(v==='transforms')renderGraph();if(v==='piano')renderPiano();if(v==='samples')renderSamples();}
+
   function makeButton(label,className,click,title=''){
     const b=document.createElement('button');b.type='button';b.className=className;b.textContent=label;b.title=title;b.onclick=click;return b;
   }
   function fireClick(fn){return e=>{clearTimeout(clickTimer);if(e.shiftKey){splitSelected(2);return}clickTimer=setTimeout(fn,180)}}
   function visualRootChildren(l){return l.root.type==='euclidean'?C.makeManual(l.root).children:l.root.children}
-  function displayEvent(n){if(n.type==='rest')return '~';if(n.type==='event')return n.value;
+  function displayEvent(n){if(n.type==='rest')return '~';if(n.type==='event')return n.value;if(n.type==='chord')return n.notes.join('+');
     if(n.type==='euclidean')return `${n.pulses}/${n.steps}`;return '▤'}
   function renderLanes(){let target=$('lanes');target.innerHTML='';
     project.lanes.forEach((l,i)=>{
@@ -465,7 +587,7 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
       const grid=document.createElement('div');grid.className='pad-grid';const children=visualRootChildren(l);
       grid.style.gridTemplateColumns=`repeat(${children.length},minmax(0,1fr))`;
       children.forEach((node,j)=>{
-        const isOn=node.type==='event'||node.type==='euclidean';
+        const isOn=node.type==='event'||node.type==='chord'||node.type==='euclidean';
         const nested=node.type==='sequence';
         const pad=makeButton(nested?'▤':(children.length<=12?displayEvent(node):''),`pad ${isOn?'active':''} ${nested?'nested':''} ${selected===i&&!focus.length&&picked===j?'selected-pad':''}`.trim(),null,
           `${l.name} · step ${j+1}; click to toggle; double-click to subdivide`);
@@ -491,7 +613,7 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
     const f=focusedFraction();$('focusTime').textContent=`${f.start.n}/${f.start.d} → ${f.end.n}/${f.end.d} cycle`;
     $('lensDescription').textContent=focus.length?`Zoom ${focus.length} · editing subdivisions inside step ${focus.at(-1)+1}`:`Root cycle · choose a step, then split or enter`;
     const box=$('lensSteps');box.innerHTML='';children.forEach((node,i)=>{
-      const nested=node.type==='sequence';const on=node.type==='event'||node.type==='euclidean';
+      const nested=node.type==='sequence';const on=node.type==='event'||node.type==='chord'||node.type==='euclidean';
       const p=makeButton('',`lens-cell ${on?'active':''} ${nested?'nested':''} ${picked===i?'selected':''}`.trim(),null);
       p.style.setProperty('--accent',accent(l));p.setAttribute('aria-label',`Step ${i+1}: ${displayEvent(node)}`);
       const idx=document.createElement('span');idx.className='idx';idx.textContent=String(i+1);
@@ -512,7 +634,7 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
     el.appendChild(svg('circle',{cx:mid,cy:mid,r,stroke:'#42505b','stroke-width':2,fill:'none'}));
     children.forEach((node,i)=>{
       const theta=i/n*Math.PI*2-Math.PI/2,x=mid+Math.cos(theta)*r,y=mid+Math.sin(theta)*r;
-      const isOn=node.type==='event'||node.type==='euclidean',nested=node.type==='sequence';
+      const isOn=node.type==='event'||node.type==='chord'||node.type==='euclidean',nested=node.type==='sequence';
       const dot=svg('circle',{cx:x,cy:y,r:nested?7:isOn?6.7:3.7,fill:nested?'#bb9ffc':isOn?color:'#4c5965',stroke:selectedLane()===l&&picked===i&&!focus.length?'#fff':'none','stroke-width':2});
       dot.style.cursor='pointer';dot.addEventListener('click',()=>{selectLane(project.lanes.indexOf(l));picked=i;render()});
       el.appendChild(dot);
@@ -528,7 +650,7 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
       const steps=visualRootChildren(l),r=56+i*21,paint=accent(l);
       el.appendChild(svg('circle',{cx,cy,r,fill:'none',stroke:'#3b4854','stroke-width':1.4}));
       steps.forEach((node,j)=>{let theta=j/steps.length*Math.PI*2-Math.PI/2,x=cx+r*Math.cos(theta),y=cy+r*Math.sin(theta);
-        let on=node.type==='event'||node.type==='euclidean',nested=node.type==='sequence';
+        let on=node.type==='event'||node.type==='chord'||node.type==='euclidean',nested=node.type==='sequence';
         let dot=svg('circle',{cx:x,cy:y,r:nested?4.7:on?4.1:2,fill:nested?'#cdb0ff':on?paint:'#4f5b65'});dot.style.cursor='pointer';
         dot.addEventListener('click',()=>{selected=i;picked=j;setView('lanes');render()});el.append(dot);
       });
@@ -536,7 +658,7 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
     const txt=svg('text',{x:cx,y:cy+4,'text-anchor':'middle','font-size':12,fill:'#eff7f3'});txt.textContent='ONE CYCLE';el.appendChild(txt);box.appendChild(el);
   }
   function renderGraph(){const l=selectedLane(),target=$('transformGraph');target.innerHTML='';const steps=l.root.type==='euclidean'?l.root.steps:l.root.children.length;
-    let nodes=[['Source',l.kind==='melody'?'note '+l.sound:'sample '+l.sound],['Structure',l.root.type==='euclidean'?`${l.root.pulses} in ${steps} Euclidean`:`${steps} steps · recursive`],['Rotation',rotationOf(l)+' / '+steps+' steps'],['Time',l.speed+'× '+(l.reverse?'reverse':'forward')],['Dynamics',l.gain.toFixed(2)+' gain'],['Output','Strudel audio']];
+    let nodes=[['Source',l.kind==='melody'?'keys '+(l.instrument||'piano'):'sample '+l.sound],['Structure',l.root.type==='euclidean'?`${l.root.pulses} in ${steps} Euclidean`:`${steps} steps · recursive`],['Rotation',rotationOf(l)+' / '+steps+' steps'],['Time',l.speed+'× '+(l.reverse?'reverse':'forward')],['Dynamics',l.gain.toFixed(2)+' gain'],['Output','Strudel audio']];
     nodes.forEach((node,i)=>{const el=document.createElement('div');el.className='transform '+(i===1?'transform-primary':'');const b=document.createElement('strong');b.textContent=node[0];const sm=document.createElement('small');sm.textContent=node[1];el.append(b,sm);target.appendChild(el);if(i<nodes.length-1){const connector=document.createElement('div');connector.className='connector';target.appendChild(connector)}})
   }
   function renderInspector(){
@@ -547,7 +669,11 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
     $('pulseValue').textContent=(l.root.type==='euclidean'?l.root.pulses:C.flatten(l.root).filter(h=>h.value!==null).length)+' / '+steps;
     $('pulsesRange').max=steps;$('pulsesRange').value=l.root.type==='euclidean'?l.root.pulses:Math.min(steps,C.flatten(l.root).filter(h=>h.value!==null).length);
     $('rotationRange').min=-(steps-1);$('rotationRange').max=steps-1;$('rotationRange').value=rotationOf(l);
-    $('rotationValue').textContent=rotationOf(l)+' steps';$('sourceSound').value=l.sound;
+    $('rotationValue').textContent=rotationOf(l)+' steps';
+    $('laneType').value=l.kind==='melody'?'melody':'drum';
+    $('drumSoundField').hidden=l.kind==='melody';$('keysSoundField').hidden=l.kind!=='melody';
+    populateSoundSelects();
+
     $('speed').value=String(l.speed);$('speedValue').textContent=l.speed+'×';$('gain').value=l.gain;$('gainValue').textContent=Number(l.gain).toFixed(2);
     $('reverse').checked=!!l.reverse;$('muted').checked=!!l.muted;
     $('miniInput').value=C.emitMini(l.root);
@@ -566,7 +692,7 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
     $('projectTitle').textContent=project.title;$('projectDesc').textContent=project.description;
     $('presetTag').textContent=presetKey==='custom'?'Custom sketch':presetKey==='samba'?'Samba study':presetKey==='broken'?'Broken rhythm':'Minimal pulse';
     document.querySelectorAll('[data-preset]').forEach(e=>e.classList.toggle('selected',e.dataset.preset===presetKey));
-    renderLanes();renderLens();renderInspector();if(view==='orbit')drawAllOrbits();if(view==='transforms')renderGraph();renderCode();
+    renderLanes();renderLens();renderInspector();if(view==='orbit')drawAllOrbits();if(view==='transforms')renderGraph();if(view==='piano')renderPiano();if(view==='samples')renderSamples();renderCode();
   }
   function debounceApply(){clearTimeout(applyTimer);applyTimer=setTimeout(()=>applyToEngine().catch(()=>{}),230)}
   // Strudel WebAudio exposes the shared context after initStrudel(). Suspending
@@ -730,7 +856,7 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
   function download(name,body,type='text/plain'){
     const a=document.createElement('a'),url=URL.createObjectURL(new Blob([body],{type}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
   }
-  function choosePreset(key){if(playing)stop();presetKey=key;project=makePreset(key);selected=0;focus=[];picked=0;activeCodeMode='visual';customCode='';persist();setView('lanes');render()}
+  function choosePreset(key){if(playing)stop();const sounds=clone(sampleLibrary()),libraries=clone(packs());presetKey=key;project=makePreset(key);project.customSamples=sounds;project.samplePacks=libraries;selected=0;focus=[];picked=0;activeCodeMode='visual';customCode='';persist();setView('lanes');render()}
   function addLane(){if(project.lanes.length>=12){notify('Maximum 12 layers');return};let i=project.lanes.length+1;project.lanes.push(makeLane('New voice '+i,'cp',8,[0,4],'An independent rhythmic voice.'));selectLane(project.lanes.length-1);meaningful()}
   function changeSteps(n){let l=selectedLane(),steps=l.root.type==='euclidean'?l.root.steps:l.root.children.length;
     n=clamp(n,2,32);if(n===steps)return;
@@ -740,10 +866,88 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
     }
     l.rotation=0;focus=[];picked=0;meaningful();
   }
-  function adjustSound(s){let l=selectedLane();l.sound=s;l.kind=s==='c2'?'melody':'drum';
-    const value=l.kind==='melody'?'c2':s;
-    function revoice(n){if(n.type==='event')return {...n,value};if(n.type==='euclidean')return {...n,value};if(n.type==='sequence')return {...n,children:n.children.map(revoice)};return n}
-    l.root=revoice(l.root);meaningful()}
+  function revoice(n,value){if(n.type==='event'||n.type==='euclidean')return {...n,value};if(n.type==='chord')return C.ev(value);if(n.type==='sequence')return {...n,children:n.children.map(child=>revoice(child,value))};return n}
+  function adjustSound(s){const l=selectedLane();l.sound=s;if(l.kind==='drum')l.root=revoice(l.root,s);meaningful()}
+  function changeLaneType(kind){const l=selectedLane();if(l.kind===kind)return;
+    l.kind=kind;l.root=revoice(l.root,kind==='melody'?'c4':'bd');
+    if(kind==='melody'){l.instrument=l.instrument||'piano';l.sound='c4';l.gain=.35;}
+    else {l.sound='bd';l.instrument=undefined;l.gain=.65;}
+    focus=[];picked=0;meaningful();setView(kind==='melody'?'piano':'lanes');}
+  function addKeysLane(){if(project.lanes.length>=12){notify('Maximum 12 layers');return}
+    const i=project.lanes.length+1;let l=makeLane('Keys '+i,'c4',16,[0,4,8,12],'Play piano, Rhodes or synth notes.','melody');
+    l.instrument='piano';l.root=C.makeSteps(16,[0,4,8,12],j=>j===0?'c4':j===4?'e4':j===8?'g4':'b4');
+    l.gain=.32;project.lanes.push(l);selectLane(project.lanes.length-1);meaningful();setView('piano');}
+  const setChoice=(select,value,text)=>{const opt=document.createElement('option');opt.value=value;opt.textContent=text;select.appendChild(opt)};
+  function populateSoundSelects(){const l=selectedLane();const drum=$('sourceSound'),keys=$('keyInstrument');drum.innerHTML='';keys.innerHTML='';
+    for(const [name,desc] of Object.entries(drumSources))setChoice(drum,name,name+' · '+desc);
+    for(const [name,desc] of Object.entries(keysSources))setChoice(keys,name,desc);
+    for(const x of sampleLibrary()){setChoice(drum,x.name,'♫ '+x.name);if(x.pitched)setChoice(keys,x.name,'♫ '+x.name+' ('+x.baseNote+')')}
+    if(l.kind==='drum'&&![...drum.options].some(o=>o.value===l.sound))setChoice(drum,l.sound,l.sound+' · sample-pack alias');
+    if(l.kind==='melody'&&![...keys.options].some(o=>o.value===(l.instrument||'piano')))setChoice(keys,l.instrument||'piano',(l.instrument||'piano')+' · bank alias');
+    drum.value=l.sound;keys.value=l.instrument||'piano';}
+  function notesAt(n){return n.type==='chord'?n.notes:n.type==='event'&&/^[a-g](?:#|b)?[0-8]$/i.test(n.value)?[n.value]:[]}
+  function togglePianoNote(step,pitch){const l=selectedLane();if(l.kind!=='melody')return;
+    if(C.at(l.root,focus).type==='euclidean')manualRoot();
+    const path=[...focus,step],node=C.at(l.root,path);
+    if(node.type==='sequence'||node.type==='euclidean'){notify('Nested step · open it in Lanes or use the recursive lens');return}
+    try{l.root=C.flipNote(l.root,path,pitch);picked=step;meaningful()}catch(e){notify(e.message)}
+  }
+  function renderPiano(){const target=$('pianoRoll');target.innerHTML='';const l=selectedLane();$('pianoTitle').textContent=l.name+' · '+(l.instrument||'piano');
+    if(l.kind!=='melody'){target.textContent='Select a keys lane in Lanes, or create a new one.';$('pianoRange').textContent='Chromatic keyboard';return}
+    const node=selectedSequence();const children=node.children||[];
+    $('pianoFocus').textContent='Subdivisions: '+children.length+' · zoom level '+focus.length;
+    const octave=+$('pianoOctave').value||3;
+    $('pianoRange').textContent=`C${octave}–B${octave+2} · click cells to add notes or chords`;
+    pianoNotes(octave).forEach(pitch=>{const row=document.createElement('div');row.className='piano-row'+(pitch.includes('#')||pitch.includes('b')?' sharp':'');
+      const key=document.createElement('button');key.type='button';key.className='piano-key'+(row.classList.contains('sharp')?' sharp':'')+(pitch.startsWith('c')?' root':'');key.textContent=pitch.toUpperCase();key.title='Pitch '+pitch;key.onclick=()=>notify('Pitch '+pitch+' · click the grid to place this note');
+      const grid=document.createElement('div');grid.className='piano-grid';grid.style.gridTemplateColumns=`repeat(${children.length},minmax(0,1fr))`;
+      children.forEach((cell,i)=>{const on=notesAt(cell).includes(pitch);const pad=document.createElement('button');pad.type='button';pad.className='piano-cell'+(on?' on':'')+(row.classList.contains('sharp')&&on?' sharp-on':'')+(i%4===0?' beat':'')+(cell.type==='sequence'?' nested':'');
+        pad.title=`${pitch.toUpperCase()} · step ${i+1}`;pad.setAttribute('aria-label',`${pitch.toUpperCase()} at step ${i+1}${on?' selected':''}`);pad.dataset.pitch=pitch;pad.dataset.step=i;pad.onclick=()=>togglePianoNote(i,pitch);grid.appendChild(pad)});
+      row.append(key,grid);target.appendChild(row)});
+  }
+  function normalizeSampleLink(input){let raw=String(input||'').trim();const u=new URL(raw);
+    if(u.hostname==='github.com'){const parts=u.pathname.split('/').filter(Boolean);const idx=parts.indexOf('blob');
+      if(idx===2&&parts.length>4)raw='https://raw.githubusercontent.com/'+parts.slice(0,2).join('/')+'/'+parts.slice(3).join('/');
+      else if(parts.length>=4&&parts[2]==='raw')raw='https://raw.githubusercontent.com/'+parts.slice(0,2).join('/')+'/'+parts.slice(3).join('/');
+      else throw Error('GitHub URLs must link to an individual audio file (…/blob/branch/file.wav)');
+    }
+    return C.validateSampleURL(raw);
+  }
+  function showSampleFeedback(message,error=false){$('sampleFeedback').textContent=message;$('sampleFeedback').style.color=error?'#ffb7aa':'#9cf1be';}
+  function renderSamples(){const list=$('sampleList');list.innerHTML='';
+    for(const [i,s] of sampleLibrary().entries()){
+      const row=document.createElement('div');row.className='sample-item';const info=document.createElement('div');const name=document.createElement('b');name.textContent=s.name+(s.pitched?' · pitched '+s.baseNote:' · one-shot');const url=document.createElement('small');url.textContent=s.url;info.append(name,url);
+      const use=makeButton('Use on lane','',()=>{const l=selectedLane();if(s.pitched&&l.kind==='melody'){l.instrument=s.name;meaningful();setView('piano')}else{if(l.kind==='melody')changeLaneType('drum');adjustSound(s.name);setView('lanes')}notify('Assigned '+s.name+' to '+l.name)});
+      const remove=makeButton('Remove','remove',()=>{if(project.lanes.some(l=>l.sound===s.name||l.instrument===s.name)){showSampleFeedback('This sample is used by a lane; select another sound first.',true);return}project.customSamples.splice(i,1);meaningful();renderSamples()});row.append(info,use,remove);list.appendChild(row);
+    }
+    if(!sampleLibrary().length){const tip=document.createElement('p');tip.className='muted-note';tip.textContent='No custom sounds yet. Add a public audio URL above.';list.appendChild(tip)}
+    const pl=$('packList');pl.innerHTML='';packs().forEach((url,i)=>{const row=document.createElement('div');row.className='sample-item';const name=document.createElement('small');name.textContent=url;name.style.flex='1';const remove=makeButton('Remove','remove',()=>{project.samplePacks.splice(i,1);meaningful();renderSamples()});row.append(name,remove);pl.appendChild(row)});
+  }
+  function addCustomSample(){try{
+      const original=$('sampleName').value.trim().toLowerCase().replace(/[^a-z0-9_]+/g,'_');
+      if(!original||!/[a-z]/.test(original[0]))throw Error('Enter a name beginning with a letter');
+      const name='sc_'+(original.startsWith('sc_')?original.slice(3):original);
+      if(!/^sc_[a-z0-9_]{1,28}$/.test(name))throw Error('Use a short sample name (letters, digits, underscore)');
+      if(sampleLibrary().some(s=>s.name===name))throw Error('Name already exists');
+      const url=normalizeSampleLink($('sampleURL').value);const pitched=$('sampleMode').value==='pitched';
+      const sample={name,url,pitched,baseNote:pickedNoteRoot()};
+      project.customSamples=sampleLibrary().concat([sample]);C.validateSamples(project);meaningful();renderSamples();showSampleFeedback('Registered '+name+'. Samples load lazily when played; the hosting URL must allow audio downloads.');
+      $('sampleName').value='';$('sampleURL').value='';
+    }catch(e){showSampleFeedback(e.message||String(e),true)}
+  }
+  function pickedNoteRoot(){return $('sampleRoot').value||'c4'}
+  function addSamplePack(){try{let input=$('packURL').value.trim();let url;
+      if(input.startsWith('github:'))url=C.validateSampleURL(input,true);else if(/^https:\/\/github\.com\/[a-z0-9_.-]+\/[a-z0-9_.-]+\/?$/i.test(input)){const m=input.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/?$/i);url=C.validateSampleURL('github:'+m[1]+'/'+m[2],true)}else url=normalizeSampleLink(input);
+      if(packs().includes(url))throw Error('This sample pack is already registered');
+      project.samplePacks=packs().concat([url]);C.validateSamples(project);meaningful();renderSamples();showSampleFeedback('Sample pack registered. Enter a sample name from its map in the alias field.');$('packURL').value='';
+    }catch(e){showSampleFeedback(e.message||String(e),true)}
+  }
+  function usePackAlias(){try{const alias=$('packAlias').value.trim();if(!/^[a-zA-Z][a-zA-Z0-9_:-]{0,45}$/.test(alias))throw Error('Enter a valid bank sample alias');
+      const l=selectedLane();if(l.kind==='melody'){l.instrument=alias;meaningful();setView('piano')}else{adjustSound(alias);setView('lanes')}
+      showSampleFeedback('Assigned '+alias+' to '+l.name+'. Ensure the pack declares this alias.');
+    }catch(e){showSampleFeedback(e.message||String(e),true)}
+  }
+
   // Engine status describes script loading, not general internet access.
   E.subscribe(updateEngineBadge);
   $('engineBadge').onclick=()=>{$('engineDiagnostics').hidden=!$('engineDiagnostics').hidden;updateEngineBadge()};
@@ -754,12 +958,20 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
   $('bpm').onchange=e=>{project.bpm=clamp(Math.round(+e.target.value||102),35,240);meaningful()};
   document.querySelectorAll('[data-preset]').forEach(e=>e.onclick=()=>choosePreset(e.dataset.preset));
   document.querySelectorAll('[data-view]').forEach(e=>e.onclick=()=>setView(e.dataset.view));
-  $('composeNav').onclick=()=>setView('lanes');$('codeNav').onclick=()=>$('codeSection').scrollIntoView({behavior:'smooth',block:'center'});
+  $('composeNav').onclick=()=>setView('lanes');$('keysNav').onclick=()=>setView('piano');$('soundsNav').onclick=()=>setView('samples');$('codeNav').onclick=()=>$('codeSection').scrollIntoView({behavior:'smooth',block:'center'});
   $('orbitGoBack').onclick=()=>setView('lanes');$('mutate').onclick=vary;$('resetPreset').onclick=()=>choosePreset(presetKey==='custom'?'samba':presetKey);
-  $('addLane').onclick=addLane;$('goUp').onclick=moveUp;$('dive').onclick=()=>enterCell();$('split2').onclick=()=>splitSelected(2);$('split3').onclick=()=>splitSelected(3);$('collapse').onclick=collapseSelected;
+  $('addLane').onclick=addLane;$('addKeysLane').onclick=addKeysLane;$('pianoAddLane').onclick=addKeysLane;
+  $('pianoOctave').onchange=renderPiano;
+  $('pianoClear').onclick=()=>{if(selectedLane().kind!=='melody')return;const l=selectedLane();if(l.root.type==='euclidean')manualRoot();const n=C.at(l.root,focus);if(n.type!=='sequence')return;l.root=C.replace(l.root,focus,C.seq(n.children.map(()=>C.rest())));meaningful()};$('goUp').onclick=moveUp;$('dive').onclick=()=>enterCell();$('split2').onclick=()=>splitSelected(2);$('split3').onclick=()=>splitSelected(3);$('collapse').onclick=collapseSelected;
   $('stepsMinus').onclick=()=>changeSteps((selectedLane().root.type==='euclidean'?selectedLane().root.steps:selectedLane().root.children.length)-1);
   $('stepsPlus').onclick=()=>changeSteps((selectedLane().root.type==='euclidean'?selectedLane().root.steps:selectedLane().root.children.length)+1);
   $('sourceSound').onchange=e=>adjustSound(e.target.value);
+  $('laneType').onchange=e=>changeLaneType(e.target.value);
+  $('keyInstrument').onchange=e=>{selectedLane().instrument=e.target.value;meaningful()};
+  $('openPiano').onclick=()=>setView('piano');$('editSampleLibrary').onclick=()=>setView('samples');
+  $('sampleMode').onchange=e=>$('sampleRootLabel').hidden=e.target.value!=='pitched';
+  $('addSample').onclick=addCustomSample;$('addPack').onclick=addSamplePack;$('usePackAlias').onclick=usePackAlias;
+
   $('applyEuclid').onclick=euclideanize;$('shiftPattern').onclick=()=>{const l=selectedLane(),n=l.root.type==='euclidean'?l.root.steps:l.root.children.length;setRotation(l,C.mod(rotationOf(l)+1,n));meaningful()};
   $('pulsesRange').onchange=e=>{const l=selectedLane();let n=l.root.type==='euclidean'?l.root.steps:l.root.children.length;let r=rotationOf(l);l.root=C.euc(l.kind==='melody'?'c2':l.sound,+e.target.value,n,r);l.rotation=0;focus=[];picked=0;meaningful()};
   $('rotationRange').onchange=e=>{setRotation(selectedLane(),+e.target.value);meaningful()};
@@ -793,6 +1005,7 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
   });
   try{const previous=JSON.parse(localStorage.getItem('strudel-canvas-v1')||'null');if(previous){C.validateProject(previous);project=previous;presetKey='custom'}else project=makePreset('samba')}
   catch(_){project=makePreset('samba')}
+  project.customSamples=project.customSamples||[];project.samplePacks=project.samplePacks||[];
   render();
   // Start downloading as soon as the visual UI is ready; retry from Diagnostics or Play.
   E.load().catch(()=>{});
