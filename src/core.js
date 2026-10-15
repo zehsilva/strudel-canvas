@@ -238,13 +238,22 @@
     if(!Number.isFinite(bpm)||bpm<35||bpm>240)throw Error('BPM must be 35–240');
     validateSamples(project);
     const custom=project.customSamples||[];
-    const packStatements=(project.samplePacks||[]).map(u=>`samples(${JSON.stringify(u)})`);
-    // In the reference REPL this manifest loads automatically. @strudel/web
-    // starts with no external samples, so exports must include it explicitly.
+    // IMPORTANT: Strudel's transpiler converts every double-quoted JS string
+    // into music mini-notation, even inside samples() calls and object values.
+    // External URLs and ordinary metadata MUST be single-quoted JS literals.
+    const jsString=value=>JSON.stringify(String(value)).slice(1,-1)
+      .replace(/'/g,"\\'").replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
+    const jsLiteral=value=>"'"+jsString(value)+"'";
+    const packStatements=(project.samplePacks||[]).map(u=>`samples(${jsLiteral(u)})`);
+    // The web bundle does not load this piano map by default.
     if(project.lanes.some(l=>l.kind==='melody'&&(!l.instrument||['piano','gm_piano'].includes(l.instrument))))
-      packStatements.unshift('samples("https://raw.githubusercontent.com/felixroos/dough-samples/main/piano.json")');
-    const map=Object.fromEntries(custom.map(s=>[s.name,s.pitched?{[s.baseNote||'c4']:s.url}:s.url]));
-    if(custom.length)packStatements.push(`samples(${JSON.stringify(map,null,2)})`);
+      packStatements.unshift(`samples(${jsLiteral('https://raw.githubusercontent.com/felixroos/dough-samples/main/piano.json')})`);
+    if(custom.length){
+      const members=custom.map(s=>`  ${jsLiteral(s.name)}: ${s.pitched
+        ? `{ ${jsLiteral(s.baseNote||'c4')}: ${jsLiteral(s.url)} }`
+        : jsLiteral(s.url)}`);
+      packStatements.push(`samples({\n${members.join(',\n')}\n})`);
+    }
     const declarations=packStatements.length?packStatements.join('\n')+'\n':'';
     // One slot per lane, even when muted
     const active=project.lanes.map(emitLane);
