@@ -997,7 +997,8 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
         if(!hardStop)notify('AudioContext not exposed; scheduler stopped, but active sounds may linger.');
         updateEngineBadge();
       }
-    }catch(e){      if(revision===playbackRevision){
+    }catch(e){
+      if(revision===playbackRevision){
         $('statusText').textContent='Stop failed';
         notify('Audio stop failed: '+(e.message||e));
         audioFailure='Stop: '+(e.message||e);updateEngineBadge();
