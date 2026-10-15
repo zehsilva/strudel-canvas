@@ -30,7 +30,7 @@
       makeLane('Bass','c2',8,[0,3,4,7],'Low notes complement the drum pulse.','melody')]};
   }
   let project, presetKey='samba', selected=0, focus=[], picked=0, view='lanes', playing=false, startedAt=0,
-    raf=0, activeCodeMode='visual', customCode='', engineInitialized=false, audioFailure='', queue=Promise.resolve(), playbackRevision=0, applyTimer=null, clickTimer=null, toastTimer=null;
+    raf=0, activeCodeMode='visual', customCode='', engineInitialized=false, audioFailure='', queue=Promise.resolve(), pendingStop=Promise.resolve(), playbackRevision=0, applyTimer=null, clickTimer=null, toastTimer=null;
   function selectedLane(){return project.lanes[selected]}
   function rotationOf(l){return l.root.type==='euclidean'?l.root.rotation:(l.rotation||0)}
   function setRotation(l,r){if(l.root.type==='euclidean'){l.root={...l.root,rotation:r};l.rotation=0}else l.rotation=r}
@@ -221,6 +221,13 @@
     renderLanes();renderLens();renderInspector();if(view==='orbit')drawAllOrbits();if(view==='transforms')renderGraph();renderCode();
   }
   function debounceApply(){clearTimeout(applyTimer);applyTimer=setTimeout(()=>applyToEngine().catch(()=>{}),230)}
+  // Strudel WebAudio exposes the shared context after initStrudel(). Suspending
+  // it is an audio-level stop: it also silences in-flight samples, synths, and FX
+  // that may keep sounding even though hush() stopped the pattern scheduler.
+  function sharedAudioContext(){
+    if(!engineInitialized || typeof window.getAudioContext!=='function')return null;
+    try{return window.getAudioContext() || null}catch(e){return null}
+  }
   function diagnosticText(state=E.state()) {
     const locationHint=state.protocol==='file:'
       ? 'Opened from a local file. If playback is blocked, try http://localhost using the included server instructions.'
@@ -231,7 +238,9 @@
       : state.phase==='ready' ? `Loaded successfully: ${state.source}` : 'No failed CDN requests recorded.';
     const loaded=state.source ? `\n\nLoaded successfully: ${state.source}` : '';
     const audioError=audioFailure ? `\n\nAudio initialization / evaluation error: ${audioFailure}` : '';
-    return `${locationHint}\n${onlineHint}\n\n${attempts}${loaded}${audioError}\n\nIf all attempts fail, check the browser Console / Network tab for CSP, ERR_BLOCKED_BY_CLIENT, DNS or TLS errors. Try opening one of the URLs above in a browser tab.`;
+    const ctx=sharedAudioContext();
+    const contextStatus=ctx ? `Strudel AudioContext: ${ctx.state || 'unknown'} (suspend: ${typeof ctx.suspend}, resume: ${typeof ctx.resume})` : 'Strudel AudioContext: not exposed through getAudioContext()';
+    return `${locationHint}\n${onlineHint}\n${contextStatus}\n\n${attempts}${loaded}${audioError}\n\nIf all attempts fail, check the browser Console / Network tab for CSP, ERR_BLOCKED_BY_CLIENT, DNS or TLS errors. Try opening one of the URLs above in a browser tab.`;
   }
   function updateEngineBadge(state=E.state()) {
     const badge=$('engineBadge');
@@ -293,38 +302,82 @@
       document.querySelectorAll('.pad').forEach(p=>{const lane=project.lanes[+p.dataset.lane];if(!lane)return;const count=visualRootChildren(lane).length;p.classList.toggle('playhead',Math.floor(phase*count)===+p.dataset.step)});
       raf=requestAnimationFrame(tick)};tick();
   }
-  async function play(){if(playing)return;
+  async function play(){
+    if(playing)return;
     const revision=++playbackRevision;
     $('statusText').textContent='Preparing Strudel…';$('playButton').disabled=true;
     try{
       await initEngine();
-      if(revision!==playbackRevision)return; // Stop during initialization
+      if(revision!==playbackRevision)return;
+      // Do not resume before the previous Stop's final hush/suspend is done.
+      // Otherwise a slow stop could suspend the sound of the new session.
+      await pendingStop.catch(()=>{});
+      if(revision!==playbackRevision)return;
+      const ctx=sharedAudioContext();
+      if(ctx?.state==='suspended' && typeof ctx.resume==='function')await ctx.resume();
+      if(revision!==playbackRevision)return;
       playing=true;
+      // Enable Stop before evaluate() finishes: sample loads may be slow.
+      $('playButton').disabled=false;
+      $('playButton').textContent='■';$('statusDot').classList.add('on');
+      startAnimation();
       await applyToEngine();
-      if(revision!==playbackRevision||!playing)return; // Stop during evaluation
-      $('playButton').textContent='■';$('statusDot').classList.add('on');startAnimation();
+      if(revision!==playbackRevision||!playing)return;
+      updateEngineBadge();
     }catch(e){
       if(revision!==playbackRevision)return;
       playing=false;audioFailure=String(e.message||e);
       notify('Could not start Strudel: '+audioFailure);
-      $('statusText').textContent='Playback unavailable';$('engineDiagnostics').hidden=false;updateEngineBadge();
+      $('statusText').textContent='Playback unavailable';
+      $('playButton').textContent='▶';$('statusDot').classList.remove('on');
+      $('engineDiagnostics').hidden=false;updateEngineBadge();
     }finally{$('playButton').disabled=false}
   }
   async function stop(){
-    ++playbackRevision;
+    const revision=++playbackRevision;
     clearTimeout(applyTimer);playing=false;cancelAnimationFrame(raf);
-    $('playButton').textContent='▶';$('statusDot').classList.remove('on');$('statusText').textContent='Stopped';
+    $('playButton').textContent='▶';$('statusDot').classList.remove('on');
+    $('statusText').textContent='Stopping audio…';
     document.querySelectorAll('.pad').forEach(p=>p.classList.remove('playhead'));
-    if(!engineInitialized)return;
-    // Immediately silence active audio. Also wait for any already-started evaluate()
-    // and silence it again, otherwise a slow evaluation resurrects playback.
-    let immediateHush;
-    try{immediateHush=Promise.resolve(window.hush())}
-    catch(e){immediateHush=Promise.reject(e)}
-    const first=immediateHush.catch(e=>{notify('Stop error: '+(e.message||e))});
+    if(!engineInitialized){$('statusText').textContent='Stopped';return}
+    const ctx=sharedAudioContext();
+    // IMPORTANT: hush() only stops Strudel's scheduler; playing or queued WebAudio
+    // voices and effect tails can continue. Suspend the shared AudioContext too.
+    // Both are launched immediately (without waiting for pending evaluations).
+    const attempt = fn => {try{return Promise.resolve(fn())}catch(e){return Promise.reject(e)}};
+    const first=Promise.allSettled([
+      attempt(()=>window.hush()),
+      ctx && typeof ctx.suspend==='function' ? attempt(()=>ctx.suspend()) : Promise.resolve()
+    ]);
+    const finalStop=enqueueAudio(async()=>{
+      const results=await first;
+      // A second hush handles evaluations that completed after the first hush.
+      // This queue is shared with evaluate(), so no older evaluation can follow it.
+      const hushAgain=await attempt(()=>window.hush()).then(()=>null,e=>e);
+      const suspendAgain=ctx && typeof ctx.suspend==='function'
+        ? await attempt(()=>ctx.state==='suspended' ? undefined : ctx.suspend()).then(()=>null,e=>e)
+        : null;
+      if(results[0].status==='rejected' && hushAgain)throw hushAgain;
+      if(suspendAgain)throw suspendAgain;
+      if(ctx && typeof ctx.suspend==='function' && ctx.state!=='suspended')
+        throw Error('AudioContext did not enter suspended state');
+      return Boolean(ctx && ctx.state==='suspended');
+    });
+    pendingStop=finalStop.catch(()=>{});
     try{
-      await enqueueAudio(async()=>{await first;await window.hush()});
-    }catch(e){notify('Stop error: '+(e.message||e));$('statusText').textContent='Stop failed'}
+      const hardStop=await finalStop;
+      if(revision===playbackRevision){
+        $('statusText').textContent=hardStop?'Stopped · audio suspended':'Stopped · scheduler only';
+        if(!hardStop)notify('AudioContext not exposed; scheduler stopped, but active sounds may linger.');
+        updateEngineBadge();
+      }
+    }catch(e){
+      if(revision===playbackRevision){
+        $('statusText').textContent='Stop failed';
+        notify('Audio stop failed: '+(e.message||e));
+        audioFailure='Stop: '+(e.message||e);updateEngineBadge();
+      }
+    }
   }
   function download(name,body,type='text/plain'){
     const a=document.createElement('a'),url=URL.createObjectURL(new Blob([body],{type}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
