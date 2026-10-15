@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101217">
+<title>Strudel Canvas · Recursive Visual Live Coding</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<header>
+  <div class="brand"><div class="brandmark">∿</div><div><h1>strudel canvas <span class="version">/ 1.1</span></h1><p>RECURSIVE PATTERN STUDIO</p></div></div>
+  <div class="header-right"><button class="pill" id="engineBadge" type="button" title="Show engine diagnostics" aria-label="Show engine diagnostics">◌ Loading Strudel…</button><button class="link-button" id="openStrudel">↗ Strudel REPL</button><button class="link-button" id="saveProject">↓ Save project</button></div>
+</header>
+<aside class="app-nav">
+ <div class="nav-section"><div class="section-head"><span class="eyebrow">Project sketches</span><span class="eyebrow">03</span></div>
+ <button class="nav-card selected" data-preset="samba"><span class="emoji">☀</span><span><strong>Samba study</strong><small>Nested percussion · 102 BPM</small></span></button>
+ <button class="nav-card" data-preset="broken"><span class="emoji">◈</span><span><strong>Broken rhythm</strong><small>Asymmetric phases · 128 BPM</small></span></button>
+ <button class="nav-card" data-preset="minimal"><span class="emoji">◉</span><span><strong>Minimal pulse</strong><small>Euclidean · 112 BPM</small></span></button></div>
+ <div class="nav-section"><div class="section-head"><span class="eyebrow">Workspace</span></div>
+ <button class="nav-card" id="composeNav"><span class="emoji">▦</span><span><strong>Visual composition</strong><small>Cycle and recursive lens</small></span></button>
+ <button class="nav-card" id="codeNav"><span class="emoji">⌘</span><span><strong>Code bridge</strong><small>Custom code remains separate</small></span></button>
+ <button class="nav-card" id="importProject"><span class="emoji">⇧</span><span><strong>Import project</strong><small>Restore .json sketch</small></span></button></div>
+ <div class="nav-footer"><b>Pattern-first, not piano-roll-first.</b><br>Double-click a step to subdivide it. Each level divides its parent's time without changing the cycle length.<br><br><span class="kbd">Space</span> Play / stop · <span class="kbd">Esc</span> Up one level</div>
+</aside>
+<section class="center">
+ <div class="title-row"><div><div class="eyebrow">COMPOSITION / <span id="presetTag">Samba study</span></div><h2 id="projectTitle">Samba, unfolded.</h2><p id="projectDesc">A living rhythm constructed from independent cycles.</p></div><div class="upper-action"><button class="mini-button" id="mutate">✦ Variation</button><button class="mini-button" id="resetPreset">↶ Reset</button></div></div>
+ <div class="transport"><button class="play" id="playButton" title="Play Strudel" aria-label="Play Strudel">▶</button><div class="transport-label"><i class="pulse" id="statusDot"></i><span id="statusText">Stopped</span></div><div class="sep"></div><div class="transport-field"><span>BPM</span><input type="number" min="35" max="240" value="102" id="bpm" aria-label="BPM"></div><div class="sep"></div><div class="transport-field"><span>CYCLE</span><strong id="cycleTime">2.35s</strong></div><div class="transport-spacer"></div><label class="switch-row"><input type="checkbox" id="autoApply" checked> Auto-evaluate edits</label><button class="mini-button" id="applyLive">↻ Evaluate</button></div>
+ <section id="engineDiagnostics" class="engine-diagnostics" hidden aria-label="Strudel engine diagnostics">
+  <div class="engine-diagnostics-head"><strong>Audio engine diagnostics</strong><div><button class="mini-button" id="retryEngine">↻ Retry engine</button><button class="mini-button" id="closeEngineDiag">✕ Close</button></div></div>
+  <p>Loading Strudel from a CDN is separate from general internet connectivity. The visual editor works without this library.</p>
+  <pre id="engineDiagText" aria-live="polite"></pre>
+ </section>
+ <div class="modebar"><div class="tabset"><button class="tab active" data-view="lanes">▦ Lanes</button><button class="tab" data-view="orbit">◉ Orbits</button><button class="tab" data-view="transforms">↗ Transforms</button></div><span class="muted-note">One cycle = four beats · different subdivisions coexist</span></div>
+ <div class="pattern-panel" id="patternPanel">
+  <div class="grid-header"><div class="eyebrow">PATTERN LAYERS</div><div class="beat-ruler"><span>1</span><span></span><span></span><span></span><span>2</span><span></span><span></span><span></span><span>3</span><span></span><span></span><span></span><span>4</span><span></span><span></span><span></span></div><div class="eyebrow">CYCLE</div></div>
+  <div id="lanes"></div>
+  <div class="grid-bottom"><button class="add-track" id="addLane">＋ Add pattern layer</button><span id="layerCount">5 independent layers</span></div>
+  <div class="lens-head"><div><span class="eyebrow">RECURSIVE LENS</span><div class="breadcrumbs" id="crumbs"></div></div><div class="lens-actions"><button id="goUp" class="mini-button">↑ Up</button><button id="dive" class="mini-button">↳ Enter</button><button id="split2" class="mini-button mint-button">⊞ Split ×2</button><button id="split3" class="mini-button">⊞ ×3</button><button id="collapse" class="mini-button">− Collapse</button></div></div>
+  <div class="lens-meta"><span id="lensDescription">Choose a step to edit its nested rhythm.</span><span id="focusTime">0–1 cycle</span></div>
+  <div class="lens-steps" id="lensSteps"></div>
+  <div class="lens-help">Click: toggle event/rest · Double-click: enter or subdivide · Shift+click: split in two. Each cell occupies an equal fraction of its parent.</div>
+ </div>
+ <div id="orbitPanel" class="pattern-panel is-hidden"><div class="eyebrow">CYCLE ORBITS</div><div id="allOrbits" class="all-orbits"></div><div class="grid-bottom"><span>Concentric rings display independent cycle subdivisions.</span><button class="add-track" id="orbitGoBack">Edit pattern →</button></div></div>
+ <div id="transformsPanel" class="pattern-panel is-hidden"><div class="eyebrow">FUNCTIONAL PATTERN PIPELINE</div><div class="graph" id="transformGraph"></div><p class="muted-note">Transformations remain symbolic in the generated Strudel expression. The recursive lens preserves structure of nested sequences.</p></div>
+ <div class="code-section" id="codeSection"><div class="code-header"><div><strong>⌘ Strudel code</strong> <span id="codeModeLabel">· generated from visual IR</span></div><div class="code-actions"><button id="copyCode">Copy</button><button id="downloadCode">↓ .js</button><button id="editCode">Edit code</button></div></div>
+ <textarea id="codeEditor" spellcheck="false" readonly aria-label="Strudel source code"></textarea>
+ <div class="code-footer"><span id="codeNotice">The visual pattern is authoritative. Turn on Edit code to run custom Strudel.</span><button class="mini-button" id="returnVisual" hidden>↶ Return to visual</button></div></div>
+ <div class="footline">The visual editor works offline. Strudel audio requires the engine bundle and may require sample downloads. Click the engine status for connection diagnostics and retry.</div>
+</section>
+<aside class="right">
+ <span class="eyebrow">SELECTED LAYER</span><h3 id="inspectorName">Surdo</h3><p class="desc" id="inspectorDescription">Deep pulse that anchors the pattern.</p><div class="orbit" id="singleOrbit"></div><div class="inspector-head"><b>Pattern controls</b><span id="inspectorMode">Manual</span></div>
+ <div class="field"><div class="top"><span>Source / sample</span></div><select id="sourceSound" class="wide-select"><option value="bd">bd · kick</option><option value="sd">sd · snare</option><option value="hh">hh · closed hat</option><option value="oh">oh · open hat</option><option value="rim">rim · rimshot</option><option value="cp">cp · clap</option><option value="lt">lt · low tom</option><option value="c2">c2 · melodic note</option></select></div>
+ <div class="field"><div class="top"><span>Euclidean pulses</span><b id="pulseValue">3 / 16</b></div><input class="range" type="range" min="0" max="16" value="3" id="pulsesRange"></div>
+ <div class="field"><div class="top"><span>Cycle rotation</span><b id="rotationValue">0 steps</b></div><input class="range" type="range" min="-15" max="15" value="0" id="rotationRange"></div>
+ <div class="field counter"><span>Root subdivisions</span><div class="stepcounter"><button id="stepsMinus" aria-label="Remove last subdivision">−</button><strong id="stepsValue">16</strong><button id="stepsPlus" aria-label="Add subdivision">+</button></div></div>
+ <div class="inspector-actions"><button id="applyEuclid">◎ Make Euclidean</button><button id="shiftPattern">⇢ Rotate +1</button></div>
+ <div class="divider-lite"></div>
+ <div class="field"><div class="top"><span>Time scale</span><b id="speedValue">1×</b></div><select class="wide-select" id="speed"><option value="0.25">¼× (slow)</option><option value="0.5">½× (slow)</option><option value="1">1× normal</option><option value="2">2× fast</option><option value="3">3× fast</option><option value="4">4× fast</option></select></div>
+ <div class="field"><div class="top"><span>Amplitude</span><b id="gainValue">0.60</b></div><input class="range" type="range" id="gain" min="0" max="1" step="0.01" value="0.6"></div>
+ <div class="field switch-line"><label><input type="checkbox" id="reverse"> Reverse time (.rev)</label><label><input type="checkbox" id="muted"> Mute</label></div>
+ <div class="divider-lite"></div>
+ <div class="field"><div class="top"><span>Selected lane mini-notation</span></div><textarea id="miniInput" class="mini-input" spellcheck="false" rows="3" aria-label="Selected lane mini-notation"></textarea><button id="parseMini" class="wide-action">Apply to selected lane</button></div>
+ <div class="hint"><b>Semantic editing</b><br>Brackets like <code>bd [hh hh] ~</code> preserve nested musical time. Unsupported mini-notation is rejected rather than silently flattened.</div>
+</aside>
+</main>
+<input type="file" id="projectFile" accept="application/json,.json" hidden>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="engine-loader.js"></script>
+<script src="core.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
