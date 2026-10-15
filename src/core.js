@@ -45,8 +45,13 @@
   function collapse(node,path){
     const target=at(node,path);
     if(target.type!=='sequence')throw Error('Not a subdivision');
-    const first=flatten(target).find(h=>h.value!==null);
-    return replace(node,path,first?ev(first.value):rest());
+    // Preserve a first encountered chord as a chord, not an invalid event
+    // containing a comma-separated string.
+    const firstSound = n => n.type==='sequence' ? n.children.map(firstSound).find(Boolean)
+      : n.type==='euclidean' ? firstSound(makeManual(n))
+      : n.type==='rest' ? null : n;
+    const first=firstSound(target);
+    return replace(node,path,first?clone(first):rest());
   }
   function toggle(node,path,value){
     const target=at(node,path);
@@ -132,9 +137,43 @@
     return group(false,0);
   }
   function cleanComment(value){return String(value||'Untitled').replace(/[\r\n\u2028\u2029]/g,' ').replace(/[^a-zA-Z0-9À-ÿ _.,:\-/]/g,'').slice(0,80)}
+  const ARP_MODES=new Set(['off','up','down','updown']);
+  function validateArp(arp){
+    if(arp==null)return {mode:'off',steps:4,octaves:1};
+    const mode=arp.mode||'off', steps=+(arp.steps??4), octaves=+(arp.octaves??1);
+    if(!ARP_MODES.has(mode)||![2,3,4,6,8].includes(steps)||![1,2].includes(octaves))
+      throw Error('Invalid arpeggiator parameters');
+    return {mode,steps,octaves};
+  }
+  function pitchFromMidi(number){
+    const names=['c','c#','d','eb','e','f','f#','g','ab','a','bb','b'];
+    if(number<12||number>119)throw Error('Arpeggio note outside C0–B8');
+    return names[number%12]+(Math.floor(number/12)-1);
+  }
+  // Non-destructive arpeggiation. Replace only chord leaves; each replacement
+  // sequence occupies exactly the original chord step's duration.
+  function arpeggiateNode(node,options){
+    const arp=validateArp(options);
+    if(arp.mode==='off')return node;
+    if(node.type==='sequence')return {...node,children:node.children.map(child=>arpeggiateNode(child,arp))};
+    if(node.type!=='chord')return node;
+    const base=node.notes.slice().sort((a,b)=>midi(a)-midi(b));
+    const playable=[];
+    for(let octave=0;octave<arp.octaves;octave++)for(const pitch of base){
+      const value=midi(pitch)+12*octave;
+      if(value<=119)playable.push(pitchFromMidi(value));
+    }
+    if(!playable.length)return node;
+    let ordered=arp.mode==='down'?playable.slice().reverse():playable.slice();
+    if(arp.mode==='updown'&&ordered.length>2)
+      ordered=ordered.concat(ordered.slice(1,-1).reverse());
+    return seq(Array.from({length:arp.steps},(_,i)=>ev(ordered[i%ordered.length])));
+  }
   function emitLane(lane){
-    if(lane.muted)return null;
-    const mini=emitMini(lane.root);
+    // Keep a stable lane slot when muted. Dropping lanes from stack() shifts
+    // positions and makes unrelated instruments appear to switch on edits.
+    if(lane.muted)return 'silence';
+    const mini=emitMini(lane.kind==='melody'?arpeggiateNode(lane.root,lane.arp):lane.root);
     const speed=Number(lane.speed)||1;
     const gain=Number(lane.gain);
     if(speed<=0||speed>8||!Number.isFinite(gain)||gain<0||gain>2||!Number.isInteger(lane.rotation||0)||Math.abs(lane.rotation||0)>64)throw Error('Invalid lane modifiers');
@@ -201,13 +240,14 @@
     const packStatements=(project.samplePacks||[]).map(u=>`samples(${JSON.stringify(u)})`);
     // In the reference REPL this manifest loads automatically. @strudel/web
     // starts with no external samples, so exports must include it explicitly.
-    if(project.lanes.some(l=>!l.muted&&l.kind==='melody'&&(!l.instrument||['piano','gm_piano'].includes(l.instrument))))
+    if(project.lanes.some(l=>l.kind==='melody'&&(!l.instrument||['piano','gm_piano'].includes(l.instrument))))
       packStatements.unshift('samples("https://raw.githubusercontent.com/felixroos/dough-samples/main/piano.json")');
     const map=Object.fromEntries(custom.map(s=>[s.name,s.pitched?{[s.baseNote||'c4']:s.url}:s.url]));
     if(custom.length)packStatements.push(`samples(${JSON.stringify(map,null,2)})`);
     const declarations=packStatements.length?packStatements.join('\n')+'\n':'';
-    const active=project.lanes.map(emitLane).filter(Boolean);
-    const body=active.length?`stack(\n${active.map((s,i)=>`  // ${cleanComment(project.lanes.filter(l=>!l.muted)[i].name)}\n  ${s}`).join(',\n')}\n)`:'silence';
+    // One slot per lane, even when muted
+    const active=project.lanes.map(emitLane);
+    const body=active.length?`stack(\n${active.map((s,i)=>`  // ${cleanComment(project.lanes[i].name)}${project.lanes[i].muted?' (muted)':''}\n  ${s}`).join(',\n')}\n)`:'silence';
     return `// Strudel Canvas / ${cleanComment(project.title)}\n// Four beats per visual cycle; edits update the running Strudel pattern.\n${declarations}setcpm(${(bpm/4).toFixed(4)})\n${body}`;
   }
   function validateNode(node,depth=0){
@@ -225,8 +265,8 @@
     if(!obj||obj.format!=='strudel-canvas-v1'||!Array.isArray(obj.lanes)||obj.lanes.length<1||obj.lanes.length>16)throw Error('Not a Strudel Canvas v1 project');
     if(!Number.isFinite(+obj.bpm)||obj.bpm<35||obj.bpm>240)throw Error('Invalid BPM');
     validateSamples(obj);
-    obj.lanes.forEach(l=>{validateNode(l.root);emitLane({...l,muted:false})});
+    obj.lanes.forEach(l=>{validateNode(l.root);validateArp(l.arp);emitLane({...l,muted:false})});
     return true;
   }
-  return { ev,chord,flipNote,midi,rest,seq,euc,mod,frac,add,sub,mul,divide,num,at,replace,split,collapse,toggle,makeSteps,euclid,makeManual,flatten,emitMini,parseMini,emitLane,emitProject,validateNode,validateProject,validateSampleURL,validateSamples,clone};
+  return { ev,chord,flipNote,midi,rest,seq,euc,mod,frac,add,sub,mul,divide,num,at,replace,split,collapse,toggle,makeSteps,euclid,makeManual,flatten,emitMini,parseMini,emitLane,emitProject,validateNode,validateProject,validateSampleURL,validateSamples,validateArp,arpeggiateNode,clone};
 });
