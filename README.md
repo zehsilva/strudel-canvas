@@ -106,3 +106,15 @@ Sample attribution: Salamander Grand Piano V3 by Alexander Holm, CC BY 3.0. Samp
 - **Limitations:** Strudel audio that was triggered before a live mute can have a short release/sample tail. Custom code still requires editing its own pattern. Real audio is browser-dependent.
 
 Local verification: `node --test tests/core.test.cjs`; `python tests/test_mute_arp.py` (the included browser tests simulate the Strudel API and verify generated patterns, not live acoustic output).
+
+
+## v1.7 — Silent playback recovery
+
+- **Error reporting:** The upstream Strudel REPL can catch evaluation exceptions and resolve without throwing. The audio bridge now recognizes the missing pattern and shows the underlying error in the **engine diagnostics** instead of claiming the app is playing.
+- **Mute representation:** A muted track now emits a verified rest Pattern `s("~")` in its original stack position, avoiding reliance on a bare identifier in the runtime scope.
+- **Queue:** Playback emits the latest mix at evaluation time, rather than dropping the only pending evaluation when the visual state changes.
+- **Optional sample loading:** Failure to retrieve an external drum or piano manifest no longer prevents built-in synths from initializing. Individual sample instruments still require the relevant samples to load.
+- **Audio diagnostic:** The **Test output** button under the engine badge plays a 440 Hz tone in an independent temporary AudioContext so it cannot resume any frozen Strudel voices.
+- **All muted:** The transport explicitly says when every visual lane is muted.
+
+Verification: `node --test tests/core.test.cjs`. Browser tests of the silent evaluator, mixer, arpeggiator and Stop are simulated; live browser audio has not been independently auditioned.
