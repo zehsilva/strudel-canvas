@@ -81,3 +81,19 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
 @media(max-width:1040px){.piano-header{flex-direction:column}.piano-tools{justify-content:flex-start}}
 
 .octave-label{display:flex;align-items:center;gap:7px;font-size:11px;color:#a3b0c0}.octave-label select{padding:8px}.piano-tools{align-items:center}
+
+/* v1.6 · stable lane mute and chord arpeggiator */
+.lane-mute{border:1px solid #587467;border-radius:7px;padding:9px 2px;background:#233c2f;color:#9cf1be;font-size:10px;font-weight:750;letter-spacing:.3px;min-width:0}
+.lane-mute.is-muted{background:#3a292e;color:#ffb3bc;border-color:#77545c}
+.lane-mute:hover{filter:brightness(1.16)}
+.lane-mute:disabled{opacity:.45;cursor:not-allowed}
+.pattern-lane.is-muted .pad,.pattern-lane.is-muted .lane-name{opacity:.35}
+.pattern-lane.is-muted .lane-name strong{text-decoration:line-through}
+.arp-panel{background:#202b2a;border:1px solid #3b6151;border-radius:12px;padding:14px}
+.arp-panel .top{margin-bottom:12px}
+.arp-label{display:block;font-size:12px;color:#b8c9c4}
+.arp-label select{margin-top:6px}
+.arp-options{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+.arp-options label{font-size:11px;color:#b8c9c4}
+.arp-options select{margin-top:6px;font-size:11px}
+.arp-hint{font-size:11px;color:#9dc0ac;margin:10px 0 0;line-height:1.6}
