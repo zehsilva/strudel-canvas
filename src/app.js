@@ -6,7 +6,11 @@
   const $ = id => document.getElementById(id);
   const colors = { bd:'#9cebb7',sd:'#bb9ffc',hh:'#83caff',oh:'#f69ac0',rim:'#ffbd7c',cp:'#f9b0bd',lt:'#d9aaff',c2:'#f5ce83' };
   const drumSources={bd:'Kick',sd:'Snare',hh:'Closed hat',oh:'Open hat',rim:'Rimshot',cp:'Clap',lt:'Low tom',sh:'Shaker',cb:'Cowbell',perc:'Percussion'};
-  const keysSources={piano:'Acoustic piano',gm_epiano1:'Electric piano / Rhodes',gm_epiano2:'Electric piano 2',gm_acoustic_bass:'Acoustic bass',gm_organ:'Organ',gm_vibraphone:'Vibraphone',gm_music_box:'Music box',triangle:'Triangle synth',sine:'Sine synth',sawtooth:'Saw synth',square:'Square synth'};
+  const keysSources={piano:'Grand piano · sampled',rhodes:'Rhodes-style keys · synth',organ:'Organ-style keys · synth',bass:'Bass keys · synth',vibes:'Vibraphone-style · synth',musicbox:'Music box-style · synth',triangle:'Triangle synth',sine:'Sine synth',sawtooth:'Saw synth',square:'Square synth'};
+  // Older sketches used unregistered gm_* names. Preserve their note patterns
+  // and switch those instruments to playable synthesizer approximations.
+  const legacyKeys={gm_piano:'piano',gm_epiano1:'rhodes',gm_epiano2:'rhodes',gm_acoustic_bass:'bass',gm_organ:'organ',gm_vibraphone:'vibes',gm_music_box:'musicbox'};
+  const PIANO_MAP_URL='https://raw.githubusercontent.com/felixroos/dough-samples/main/piano.json';
   const pianoNotes=(octave)=>Array.from({length:36},(_,i)=>{const midi=(octave+4)*12-1-i;const names=['c','c#','d','eb','e','f','f#','g','ab','a','bb','b'];return names[midi%12]+(Math.floor(midi/12)-1)});
   const sampleLibrary=()=>project.customSamples||[];
   const packs=()=>project.samplePacks||[];
@@ -271,7 +275,13 @@
     try {
       await window.initStrudel({prebake:()=>{
         if(typeof window.samples!=='function')throw new Error('samples() was not exposed by the engine');
-        return window.samples('github:tidalcycles/dirt-samples');
+        // @strudel/web does not pre-register the piano bank used by the REPL.
+        // Load both sample maps before evaluating notes. Actual WAV/MP3 data is
+        // lazy-loaded by Strudel when a note is first triggered.
+        return Promise.all([
+          window.samples('github:tidalcycles/dirt-samples'),
+          window.samples(PIANO_MAP_URL),
+        ]);
       }});
     } catch(e) {
       throw new Error('Strudel initialization / sample loading failed: '+(e.message||e));
@@ -416,6 +426,7 @@
     l.gain=.32;project.lanes.push(l);selectLane(project.lanes.length-1);meaningful();setView('piano');}
   const setChoice=(select,value,text)=>{const opt=document.createElement('option');opt.value=value;opt.textContent=text;select.appendChild(opt)};
   function populateSoundSelects(){const l=selectedLane();const drum=$('sourceSound'),keys=$('keyInstrument');drum.innerHTML='';keys.innerHTML='';
+    if(l.kind==='melody'&&legacyKeys[l.instrument])l.instrument=legacyKeys[l.instrument];
     for(const [name,desc] of Object.entries(drumSources))setChoice(drum,name,name+' · '+desc);
     for(const [name,desc] of Object.entries(keysSources))setChoice(keys,name,desc);
     for(const x of sampleLibrary()){setChoice(drum,x.name,'♫ '+x.name);if(x.pitched)setChoice(keys,x.name,'♫ '+x.name+' ('+x.baseNote+')')}
