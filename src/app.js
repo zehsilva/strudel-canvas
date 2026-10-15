@@ -40,7 +40,8 @@
       makeLane('Bass','c2',8,[0,3,4,7],'Low notes complement the drum pulse.','melody')]};
   }
   let project, presetKey='samba', selected=0, focus=[], picked=0, view='lanes', playing=false, startedAt=0,
-    raf=0, activeCodeMode='visual', customCode='', engineInitialized=false, audioFailure='', queue=Promise.resolve(), pendingStop=Promise.resolve(), playbackRevision=0, mixRevision=0, applyTimer=null, clickTimer=null, toastTimer=null;
+    raf=0, activeCodeMode='visual', customCode='', engineInitialized=false, audioFailure='', queue=Promise.resolve(), pendingStop=Promise.resolve(), playbackRevision=0, mixRevision=0, applyTimer=null, clickTimer=null, toastTimer=null,
+    lastEvalError=null, sampleWarnings=[];
   function selectedLane(){return project.lanes[selected]}
   function rotationOf(l){return l.root.type==='euclidean'?l.root.rotation:(l.rotation||0)}
   function setRotation(l,r){if(l.root.type==='euclidean'){l.root={...l.root,rotation:r};l.rotation=0}else l.rotation=r}
@@ -279,15 +280,16 @@
       : state.phase==='ready' ? `Loaded successfully: ${state.source}` : 'No failed CDN requests recorded.';
     const loaded=state.source ? `\n\nLoaded successfully: ${state.source}` : '';
     const audioError=audioFailure ? `\n\nAudio initialization / evaluation error: ${audioFailure}` : '';
+    const sampleErrors=sampleWarnings.length?`\n\nSample warnings: ${sampleWarnings.join('; ')}`:'';
     const ctx=sharedAudioContext();
     const contextStatus=ctx ? `Strudel AudioContext: ${ctx.state || 'unknown'} (suspend: ${typeof ctx.suspend}, resume: ${typeof ctx.resume})` : 'Strudel AudioContext: not exposed through getAudioContext()';
-    return `${locationHint}\n${onlineHint}\n${contextStatus}\n\n${attempts}${loaded}${audioError}\n\nIf all attempts fail, check the browser Console / Network tab for CSP, ERR_BLOCKED_BY_CLIENT, DNS or TLS errors. Try opening one of the URLs above in a browser tab.`;
+    return `${locationHint}\n${onlineHint}\n${contextStatus}\n\n${attempts}${loaded}${audioError}${sampleErrors}\n\nIf all attempts fail, check the browser Console / Network tab for CSP, ERR_BLOCKED_BY_CLIENT, DNS or TLS errors. Try opening one of the URLs above in a browser tab.`;
   }
   function updateEngineBadge(state=E.state()) {
     const badge=$('engineBadge');
     const labels={idle:'○ Engine not checked',loading:'◌ Loading Strudel…',ready:'● Strudel script loaded',error:'⚠ Strudel CDN failed'};
-    badge.textContent=engineInitialized?'● Strudel audio ready':audioFailure?'⚠ Audio initialization failed':labels[state.phase];
-    badge.style.color=engineInitialized?'#9cf1be':audioFailure||state.phase==='error'?'#ffbd7c':state.phase==='ready'?'#9cf1be':'#d5d9e1';
+    badge.textContent=audioFailure?'⚠ Strudel audio error':engineInitialized?'● Strudel audio ready':labels[state.phase];
+    badge.style.color=audioFailure||state.phase==='error'?'#ffbd7c':engineInitialized||state.phase==='ready'?'#9cf1be':'#d5d9e1';
     $('engineDiagText').textContent=diagnosticText(state);
     $('retryEngine').disabled=state.phase==='loading';
     if(state.phase==='error')$('engineDiagnostics').hidden=false;
@@ -299,16 +301,28 @@
     await E.load(true);
     $('statusText').textContent='Initializing Strudel…';
     try {
-      await window.initStrudel({prebake:()=>{
-        if(typeof window.samples!=='function')throw new Error('samples() was not exposed by the engine');
-        // @strudel/web does not pre-register the piano bank used by the REPL.
-        // Load both sample maps before evaluating notes. Actual WAV/MP3 data is
-        // lazy-loaded by Strudel when a note is first triggered.
-        return Promise.all([
-          window.samples('github:tidalcycles/dirt-samples'),
-          window.samples(PIANO_MAP_URL),
-        ]);
-      }});
+      lastEvalError=null;
+      await window.initStrudel({
+        // Strudel's repl.evaluate catches errors rather than rethrowing them.
+        // Capture the underlying reason so silence cannot masquerade as Play.
+        onEvalError:e=>{lastEvalError=e instanceof Error?e:new Error(String(e))},
+        prebake:async()=>{
+          if(typeof window.samples!=='function')throw new Error('samples() was not exposed by the engine');
+          // Sample packs are OPTIONAL external dependencies. The audio engine and
+          // built-in oscillators must remain usable if a GitHub manifest fails.
+          const sources=[['Drum samples','github:tidalcycles/dirt-samples'],['Piano samples',PIANO_MAP_URL]];
+          const results=await Promise.allSettled(sources.map(async ([name,url])=>{
+            // Bound startup delay while allowing the slow request to settle later.
+            // Promise.race attaches its rejection handler to the underlying promise.
+            await Promise.race([
+              Promise.resolve().then(()=>window.samples(url)),
+              new Promise((_,reject)=>setTimeout(()=>reject(Error('timed out after 8 s')),8000)),
+            ]);
+          }));
+          sampleWarnings=results.flatMap((result,i)=>result.status==='rejected'
+            ?[sources[i][0]+': '+String(result.reason?.message||result.reason)]:[]);
+        }
+      });
     } catch(e) {
       throw new Error('Strudel initialization / sample loading failed: '+(e.message||e));
     }
@@ -327,19 +341,33 @@
   }
   async function applyToEngine(){
     if(!playing)return;
-    const revision=playbackRevision, mix=mixRevision;
-    const code=effectiveCode();
+    const revision=playbackRevision;
     return enqueueAudio(async()=>{
-      // Drop obsolete queued code: a mute or rapid edit supersedes it.
-      if(!playing||revision!==playbackRevision||mix!==mixRevision)return;
+      if(!playing||revision!==playbackRevision)return;
+      // Generate the LATEST state at execution time, not when the job was
+      // queued. Never discard the only pending initial evaluation because a
+      // mixer change bumped mixRevision while Auto-evaluate was unchecked.
+      const code=effectiveCode();
+      lastEvalError=null;
       try{
-        await window.evaluate(code);
-        // A stop may have happened while evaluate() was running.
-        if(playing&&revision===playbackRevision)$('statusText').textContent='Playing · Strudel';
+        const result=await window.evaluate(code);
+        // Strudel REPL swallows its exceptions, calls onEvalError, and resolves
+        // to undefined. Without this guard it silently kills the prior pattern.
+        if(lastEvalError)throw lastEvalError;
+        if(result===undefined)throw new Error('Strudel returned no pattern. Open Audio diagnostics for errors; check generated code.');
+        if(playing&&revision===playbackRevision){
+          audioFailure='';
+          const allMuted=activeCodeMode==='visual'&&project.lanes.every(l=>l.muted);
+          $('statusText').textContent=allMuted?'All lanes muted · unmute a track':'Playing · Strudel';
+          updateEngineBadge();
+        }
       }catch(e){
         if(playing&&revision===playbackRevision){
-          $('statusText').textContent='Audio error';
-          notify(`Strudel evaluation failed: ${e.message||e}`);
+          audioFailure=String(e.message||e);
+          $('statusText').textContent='Audio error · inspect diagnostics';
+          $('engineDiagnostics').hidden=false;
+          updateEngineBadge();
+          notify('Strudel evaluation failed: '+audioFailure);
         }
         throw e;
       }
@@ -363,6 +391,7 @@
       if(revision!==playbackRevision)return;
       const ctx=sharedAudioContext();
       if(ctx?.state==='suspended' && typeof ctx.resume==='function')await ctx.resume();
+      if(ctx?.state==='suspended')throw Error('Browser AudioContext remained suspended. Click Play again after interacting with the page.');
       if(revision!==playbackRevision)return;
       playing=true;
       // Enable Stop before evaluate() finishes: sample loads may be slow.
@@ -375,6 +404,7 @@
     }catch(e){
       if(revision!==playbackRevision)return;
       playing=false;audioFailure=String(e.message||e);
+      cancelAnimationFrame(raf);
       notify('Could not start Strudel: '+audioFailure);
       $('statusText').textContent='Playback unavailable';
       $('playButton').textContent='▶';$('statusDot').classList.remove('on');
@@ -419,8 +449,7 @@
         if(!hardStop)notify('AudioContext not exposed; scheduler stopped, but active sounds may linger.');
         updateEngineBadge();
       }
-    }catch(e){
-      if(revision===playbackRevision){
+    }catch(e){      if(revision===playbackRevision){
         $('statusText').textContent='Stop failed';
         notify('Audio stop failed: '+(e.message||e));
         audioFailure='Stop: '+(e.message||e);updateEngineBadge();
@@ -530,6 +559,27 @@
   $('engineBadge').onclick=()=>{$('engineDiagnostics').hidden=!$('engineDiagnostics').hidden;updateEngineBadge()};
   $('closeEngineDiag').onclick=()=>$('engineDiagnostics').hidden=true;
   $('retryEngine').onclick=()=>E.load(true).catch(()=>{});
+  $('testTone').onclick=async()=>{
+    // Independent brief output test: tests browser/device without needing a
+    // Strudel soundfont, sample download or generated code to evaluate.
+    try{
+      // Use an independent AudioContext so this test cannot accidentally
+      // resume frozen Strudel voices from the previous Stop.
+      const AudioContextCtor=window.AudioContext||window.webkitAudioContext;
+      const ctx=new AudioContextCtor();
+      if(ctx.state==='suspended')await ctx.resume();
+      const osc=ctx.createOscillator(),gain=ctx.createGain(),now=ctx.currentTime;
+      osc.type='sine';osc.frequency.value=440;
+      gain.gain.setValueAtTime(.0001,now);
+      gain.gain.exponentialRampToValueAtTime(.1,now+.025);
+      gain.gain.exponentialRampToValueAtTime(.0001,now+.27);
+      osc.connect(gain);gain.connect(ctx.destination);
+      osc.onended=()=>ctx.close().catch(()=>{});
+      osc.start(now);osc.stop(now+.29);
+      notify('Output test: 440 Hz tone for 0.3 s');
+      updateEngineBadge();
+    }catch(e){notify('Audio output test failed: '+(e.message||e))}
+  };
   // Event wiring
   $('playButton').onclick=()=>playing?stop():play();$('applyLive').onclick=async()=>{if(!playing){await play();return}try{await applyToEngine();notify('Sent current code to Strudel')}catch(_){}};
   $('bpm').onchange=e=>{project.bpm=clamp(Math.round(+e.target.value||102),35,240);meaningful()};
