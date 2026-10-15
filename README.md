@@ -46,3 +46,16 @@ The interface is an early prototype supporting a documented subset of Strudel mi
 The application dynamically loads the separately distributed `@strudel/web` library. Review the upstream library license and attribution requirements before further redistribution. This repository does not contain the upstream Strudel engine or sample bank.
 
 Source: initial implementation by collaborative development in ChatGPT, 2026.
+## Transport reliability (v1.2)
+
+Stop calls `hush()` immediately and again after any in-flight `evaluate()` finishes. Evaluations and the final stop use one serialized audio-operation queue, and stale playback sessions cannot update the UI. This fixes delayed audio restarting after Stop, including live edits during playback.
+
+Browser regression test (requires Python Playwright and Chromium):
+
+```bash
+pip install playwright
+python -m playwright install chromium
+python src/tests/transport_race.py
+```
+
+The browser test mocks Strudel's audio functions to reproduce the ordering race; it does not verify actual audio output.
