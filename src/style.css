@@ -36,3 +36,48 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
 .engine-diagnostics-head strong{font-size:13px}.engine-diagnostics-head>div{display:flex;gap:8px}
 .engine-diagnostics p{font-size:12px;color:#c1b7b1;line-height:1.5;margin:10px 0}
 .engine-diagnostics pre{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;max-height:210px;overflow:auto;min-height:0;padding:12px;background:#1a1920;border-radius:8px;font-size:11px;color:#e4d9d2}
+
+/* v1.4: sample library and chromatic piano roll */
+[hidden]{display:none!important}
+.track-actions{display:flex;gap:8px;flex-wrap:wrap}
+.track-actions .add-track{white-space:nowrap}
+.piano-header{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:16px}
+.piano-header h3,.pattern-panel h3{margin:8px 0;color:#eff2f7;font-size:17px}
+.piano-header p{max-width:500px;line-height:1.5}
+.piano-tools{display:flex;gap:7px;flex-wrap:wrap;justify-content:end}
+.piano-roll{--key-width:70px;max-height:540px;overflow:auto;background:#171b22;border:1px solid #3a4350;border-radius:11px;position:relative;scrollbar-color:#556473 #171b22}
+.piano-row{display:grid;grid-template-columns:var(--key-width) minmax(490px,1fr);height:24px;align-items:stretch}
+.piano-row+.piano-row{border-top:1px solid #313845}
+.piano-key{border:0;border-right:2px solid #384250;border-radius:0;position:sticky;left:0;z-index:2;text-align:left;padding:0 8px;font-size:11px;font-weight:600;color:#1b2832;background:#d5dbe0}
+.piano-key.sharp{background:#313b48;color:#f2f4fc;border-right-color:#637083}
+.piano-key.root{box-shadow:inset 4px 0 0 #89e3b5}
+.piano-grid{display:grid;gap:1px;min-width:490px;background:#232a34}
+.piano-cell{background:#27303a;border:0;border-radius:0;padding:0;min-width:0;position:relative}
+.piano-row.sharp .piano-cell{background:#222833}
+.piano-cell.beat{box-shadow:inset 2px 0 0 #56606d}
+.piano-cell:hover{background:#526354!important}
+.piano-cell.on{background:#9cf1be!important;box-shadow:inset 0 -3px 0 #427a59}
+.piano-cell.on.sharp-on{background:#8bb4ed!important}
+.piano-cell.nested{background:repeating-linear-gradient(45deg,#39314a,#39314a 4px,#302a40 4px,#302a40 8px)}
+.piano-cell:focus-visible{outline:2px solid white;outline-offset:-2px;z-index:1}
+.piano-info{display:flex;justify-content:space-between;gap:15px;color:#8495a5;font-size:11px;margin:10px 0}
+.sample-form{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;padding:16px 0}
+.sample-form label{display:flex;gap:7px;flex-direction:column;color:#b9c5d1;font-size:11px;flex:1 1 160px;min-width:125px}
+.sample-form label:has(#sampleURL){flex:2 1 270px}
+.sample-form input,.sample-form select{border:1px solid #4b5869;border-radius:8px;color:#f1f5f8;background:#12171d;padding:10px;font-size:12px;width:100%}
+.sample-form button{padding:10px 12px;margin:0;width:auto;min-height:36px}
+.sample-list{display:flex;flex-direction:column;gap:8px;margin:10px 0 18px}
+.sample-item{display:flex;align-items:center;flex-wrap:wrap;gap:10px;background:#252b36;border:1px solid #35414d;border-radius:10px;padding:11px 12px}
+.sample-item div{flex:1;min-width:150px}
+.sample-item b{display:block;font-size:12px;color:#dffcea}
+.sample-item small{display:block;font-size:11px;color:#9ba9b7;word-break:break-all;margin-top:4px}
+.sample-item button{background:#293c38;border:1px solid #486054;border-radius:8px;color:#c3ebd1;padding:7px 10px;font-size:11px}
+.sample-item button.remove{color:#f4b4b4;border-color:#634747;background:#31282c}
+.sample-feedback{font-size:12px;color:#ffce94;min-height:20px;line-height:1.5}
+.tiny-link{border:0;background:none;color:#9cf1be;font-size:11px;padding:0;cursor:pointer}
+.compact-form{padding-top:3px}
+#openPiano{margin-top:8px}
+#keysSoundField .wide-action{font-size:11px}
+@media(max-width:1040px){.piano-header{flex-direction:column}.piano-tools{justify-content:flex-start}}
+
+.octave-label{display:flex;align-items:center;gap:7px;font-size:11px;color:#a3b0c0}.octave-label select{padding:8px}.piano-tools{align-items:center}
