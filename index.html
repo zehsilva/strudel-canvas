@@ -89,12 +89,28 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
 
 .octave-label{display:flex;align-items:center;gap:7px;font-size:11px;color:#a3b0c0}.octave-label select{padding:8px}.piano-tools{align-items:center}
 
+/* v1.6 · stable lane mute and chord arpeggiator */
+.lane-mute{border:1px solid #587467;border-radius:7px;padding:9px 2px;background:#233c2f;color:#9cf1be;font-size:10px;font-weight:750;letter-spacing:.3px;min-width:0}
+.lane-mute.is-muted{background:#3a292e;color:#ffb3bc;border-color:#77545c}
+.lane-mute:hover{filter:brightness(1.16)}
+.lane-mute:disabled{opacity:.45;cursor:not-allowed}
+.pattern-lane.is-muted .pad,.pattern-lane.is-muted .lane-name{opacity:.35}
+.pattern-lane.is-muted .lane-name strong{text-decoration:line-through}
+.arp-panel{background:#202b2a;border:1px solid #3b6151;border-radius:12px;padding:14px}
+.arp-panel .top{margin-bottom:12px}
+.arp-label{display:block;font-size:12px;color:#b8c9c4}
+.arp-label select{margin-top:6px}
+.arp-options{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+.arp-options label{font-size:11px;color:#b8c9c4}
+.arp-options select{margin-top:6px;font-size:11px}
+.arp-hint{font-size:11px;color:#9dc0ac;margin:10px 0 0;line-height:1.6}
+
 </style>
 </head>
 <body>
 <main>
 <header>
-  <div class="brand"><div class="brandmark">∿</div><div><h1>strudel canvas <span class="version">/ 1.5</span></h1><p>RECURSIVE PATTERN STUDIO</p></div></div>
+  <div class="brand"><div class="brandmark">∿</div><div><h1>strudel canvas <span class="version">/ 1.6</span></h1><p>RECURSIVE PATTERN STUDIO</p></div></div>
   <div class="header-right"><button class="pill" id="engineBadge" type="button" title="Show engine diagnostics" aria-label="Show engine diagnostics">◌ Loading Strudel…</button><button class="link-button" id="openStrudel">↗ Strudel REPL</button><button class="link-button" id="saveProject">↓ Save project</button></div>
 </header>
 <aside class="app-nav">
@@ -120,7 +136,7 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
  </section>
  <div class="modebar"><div class="tabset"><button class="tab active" data-view="lanes">▦ Lanes</button><button class="tab" data-view="piano">♬ Piano roll</button><button class="tab" data-view="samples">♫ Samples</button><button class="tab" data-view="orbit">◉ Orbits</button><button class="tab" data-view="transforms">↗ Transforms</button></div><span class="muted-note">One cycle = four beats · different subdivisions coexist</span></div>
  <div class="pattern-panel" id="patternPanel">
-  <div class="grid-header"><div class="eyebrow">PATTERN LAYERS</div><div class="beat-ruler"><span>1</span><span></span><span></span><span></span><span>2</span><span></span><span></span><span></span><span>3</span><span></span><span></span><span></span><span>4</span><span></span><span></span><span></span></div><div class="eyebrow">CYCLE</div></div>
+  <div class="grid-header"><div class="eyebrow">PATTERN LAYERS</div><div class="beat-ruler"><span>1</span><span></span><span></span><span></span><span>2</span><span></span><span></span><span></span><span>3</span><span></span><span></span><span></span><span>4</span><span></span><span></span><span></span></div><div class="eyebrow">MUTE</div></div>
   <div id="lanes"></div>
   <div class="grid-bottom"><div class="track-actions"><button class="add-track" id="addLane">＋ Drum lane</button><button class="add-track" id="addKeysLane">＋ Keys lane</button></div><span id="layerCount">5 independent layers</span></div>
   <div class="lens-head"><div><span class="eyebrow">RECURSIVE LENS</span><div class="breadcrumbs" id="crumbs"></div></div><div class="lens-actions"><button id="goUp" class="mini-button">↑ Up</button><button id="dive" class="mini-button">↳ Enter</button><button id="split2" class="mini-button mint-button">⊞ Split ×2</button><button id="split3" class="mini-button">⊞ ×3</button><button id="collapse" class="mini-button">− Collapse</button></div></div>
@@ -129,7 +145,7 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
   <div class="lens-help">Click: toggle event/rest · Double-click: enter or subdivide · Shift+click: split in two. Each cell occupies an equal fraction of its parent.</div>
  </div>
  <div id="pianoPanel" class="pattern-panel is-hidden">
-  <div class="piano-header"><div><span class="eyebrow">PIANO ROLL / SELECTED KEYS LANE</span><h3 id="pianoTitle">Keys</h3><p class="muted-note">Click a cell to add/remove a note. Multiple notes in one step create chords. Double-click nested steps in Lanes to edit their subdivision.</p></div><div class="piano-tools"><label class="octave-label">Keyboard range <select id="pianoOctave" class="mini-button"><option value="1">C1–B3</option><option value="2">C2–B4</option><option value="3" selected>C3–B5</option><option value="4">C4–B6</option></select></label><button class="mini-button" id="pianoClear">Clear notes</button><button class="mini-button" id="pianoAddLane">＋ New keys lane</button></div></div>
+  <div class="piano-header"><div><span class="eyebrow">PIANO ROLL / SELECTED KEYS LANE</span><h3 id="pianoTitle">Keys</h3><p class="muted-note">Click cells for single notes or chords. Use the inspector Arpeggiator to play each chord as a sequence while preserving your original chord grid.</p></div><div class="piano-tools"><label class="octave-label">Keyboard range <select id="pianoOctave" class="mini-button"><option value="1">C1–B3</option><option value="2">C2–B4</option><option value="3" selected>C3–B5</option><option value="4">C4–B6</option></select></label><button class="mini-button" id="pianoClear">Clear notes</button><button class="mini-button" id="pianoAddLane">＋ New keys lane</button></div></div>
   <div id="pianoRoll" class="piano-roll" aria-label="Piano roll editor"></div>
   <div class="grid-bottom"><span id="pianoRange">C3–B5 · chromatic</span><span id="pianoFocus">Editing 1 cycle</span></div>
  </div>
@@ -164,6 +180,12 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
  <div class="field"><div class="top"><span>Track type</span></div><select id="laneType" class="wide-select"><option value="drum">Drum / sample</option><option value="melody">Keys / pitched notes</option></select></div>
  <div id="drumSoundField" class="field"><div class="top"><span>Source / sample</span><button type="button" class="tiny-link" id="editSampleLibrary">+ Library</button></div><select id="sourceSound" class="wide-select"></select></div>
  <div id="keysSoundField" class="field" hidden><div class="top"><span>Keys instrument</span></div><select id="keyInstrument" class="wide-select"></select><button class="wide-action" id="openPiano">♬ Open piano roll</button></div>
+ <div id="arpeggiatorField" class="field arp-panel" hidden>
+  <div class="top"><span>Arpeggiator · chords</span><b>Non-destructive</b></div>
+  <label class="arp-label">Direction <select id="arpMode" class="wide-select"><option value="off">Off · play chords</option><option value="up">Up ↑</option><option value="down">Down ↓</option><option value="updown">Up & down ↕</option></select></label>
+  <div class="arp-options"><label>Notes / chord step <select id="arpSteps" class="wide-select"><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="6">6</option><option value="8">8</option></select></label><label>Octaves <select id="arpOctaves" class="wide-select"><option value="1" selected>1</option><option value="2">2</option></select></label></div>
+  <p class="arp-hint" id="arpHint">Play chord notes simultaneously</p>
+ </div>
  <div class="field"><div class="top"><span>Euclidean pulses</span><b id="pulseValue">3 / 16</b></div><input class="range" type="range" min="0" max="16" value="3" id="pulsesRange"></div>
  <div class="field"><div class="top"><span>Cycle rotation</span><b id="rotationValue">0 steps</b></div><input class="range" type="range" min="-15" max="15" value="0" id="rotationRange"></div>
  <div class="field counter"><span>Root subdivisions</span><div class="stepcounter"><button id="stepsMinus" aria-label="Remove last subdivision">−</button><strong id="stepsValue">16</strong><button id="stepsPlus" aria-label="Add subdivision">+</button></div></div>
@@ -295,8 +317,13 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
   function collapse(node,path){
     const target=at(node,path);
     if(target.type!=='sequence')throw Error('Not a subdivision');
-    const first=flatten(target).find(h=>h.value!==null);
-    return replace(node,path,first?ev(first.value):rest());
+    // Preserve a first encountered chord as a chord, not an invalid event
+    // containing a comma-separated string.
+    const firstSound = n => n.type==='sequence' ? n.children.map(firstSound).find(Boolean)
+      : n.type==='euclidean' ? firstSound(makeManual(n))
+      : n.type==='rest' ? null : n;
+    const first=firstSound(target);
+    return replace(node,path,first?clone(first):rest());
   }
   function toggle(node,path,value){
     const target=at(node,path);
@@ -382,9 +409,43 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
     return group(false,0);
   }
   function cleanComment(value){return String(value||'Untitled').replace(/[\r\n\u2028\u2029]/g,' ').replace(/[^a-zA-Z0-9À-ÿ _.,:\-/]/g,'').slice(0,80)}
+  const ARP_MODES=new Set(['off','up','down','updown']);
+  function validateArp(arp){
+    if(arp==null)return {mode:'off',steps:4,octaves:1};
+    const mode=arp.mode||'off', steps=+(arp.steps??4), octaves=+(arp.octaves??1);
+    if(!ARP_MODES.has(mode)||![2,3,4,6,8].includes(steps)||![1,2].includes(octaves))
+      throw Error('Invalid arpeggiator parameters');
+    return {mode,steps,octaves};
+  }
+  function pitchFromMidi(number){
+    const names=['c','c#','d','eb','e','f','f#','g','ab','a','bb','b'];
+    if(number<12||number>119)throw Error('Arpeggio note outside C0–B8');
+    return names[number%12]+(Math.floor(number/12)-1);
+  }
+  // Non-destructive arpeggiation. Replace only chord leaves; each replacement
+  // sequence occupies exactly the original chord step's duration.
+  function arpeggiateNode(node,options){
+    const arp=validateArp(options);
+    if(arp.mode==='off')return node;
+    if(node.type==='sequence')return {...node,children:node.children.map(child=>arpeggiateNode(child,arp))};
+    if(node.type!=='chord')return node;
+    const base=node.notes.slice().sort((a,b)=>midi(a)-midi(b));
+    const playable=[];
+    for(let octave=0;octave<arp.octaves;octave++)for(const pitch of base){
+      const value=midi(pitch)+12*octave;
+      if(value<=119)playable.push(pitchFromMidi(value));
+    }
+    if(!playable.length)return node;
+    let ordered=arp.mode==='down'?playable.slice().reverse():playable.slice();
+    if(arp.mode==='updown'&&ordered.length>2)
+      ordered=ordered.concat(ordered.slice(1,-1).reverse());
+    return seq(Array.from({length:arp.steps},(_,i)=>ev(ordered[i%ordered.length])));
+  }
   function emitLane(lane){
-    if(lane.muted)return null;
-    const mini=emitMini(lane.root);
+    // Keep a stable lane slot when muted. Dropping lanes from stack() shifts
+    // positions and makes unrelated instruments appear to switch on edits.
+    if(lane.muted)return 'silence';
+    const mini=emitMini(lane.kind==='melody'?arpeggiateNode(lane.root,lane.arp):lane.root);
     const speed=Number(lane.speed)||1;
     const gain=Number(lane.gain);
     if(speed<=0||speed>8||!Number.isFinite(gain)||gain<0||gain>2||!Number.isInteger(lane.rotation||0)||Math.abs(lane.rotation||0)>64)throw Error('Invalid lane modifiers');
@@ -451,13 +512,14 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
     const packStatements=(project.samplePacks||[]).map(u=>`samples(${JSON.stringify(u)})`);
     // In the reference REPL this manifest loads automatically. @strudel/web
     // starts with no external samples, so exports must include it explicitly.
-    if(project.lanes.some(l=>!l.muted&&l.kind==='melody'&&(!l.instrument||['piano','gm_piano'].includes(l.instrument))))
+    if(project.lanes.some(l=>l.kind==='melody'&&(!l.instrument||['piano','gm_piano'].includes(l.instrument))))
       packStatements.unshift('samples("https://raw.githubusercontent.com/felixroos/dough-samples/main/piano.json")');
     const map=Object.fromEntries(custom.map(s=>[s.name,s.pitched?{[s.baseNote||'c4']:s.url}:s.url]));
     if(custom.length)packStatements.push(`samples(${JSON.stringify(map,null,2)})`);
     const declarations=packStatements.length?packStatements.join('\n')+'\n':'';
-    const active=project.lanes.map(emitLane).filter(Boolean);
-    const body=active.length?`stack(\n${active.map((s,i)=>`  // ${cleanComment(project.lanes.filter(l=>!l.muted)[i].name)}\n  ${s}`).join(',\n')}\n)`:'silence';
+    // One slot per lane, even when muted
+    const active=project.lanes.map(emitLane);
+    const body=active.length?`stack(\n${active.map((s,i)=>`  // ${cleanComment(project.lanes[i].name)}${project.lanes[i].muted?' (muted)':''}\n  ${s}`).join(',\n')}\n)`:'silence';
     return `// Strudel Canvas / ${cleanComment(project.title)}\n// Four beats per visual cycle; edits update the running Strudel pattern.\n${declarations}setcpm(${(bpm/4).toFixed(4)})\n${body}`;
   }
   function validateNode(node,depth=0){
@@ -475,10 +537,10 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
     if(!obj||obj.format!=='strudel-canvas-v1'||!Array.isArray(obj.lanes)||obj.lanes.length<1||obj.lanes.length>16)throw Error('Not a Strudel Canvas v1 project');
     if(!Number.isFinite(+obj.bpm)||obj.bpm<35||obj.bpm>240)throw Error('Invalid BPM');
     validateSamples(obj);
-    obj.lanes.forEach(l=>{validateNode(l.root);emitLane({...l,muted:false})});
+    obj.lanes.forEach(l=>{validateNode(l.root);validateArp(l.arp);emitLane({...l,muted:false})});
     return true;
   }
-  return { ev,chord,flipNote,midi,rest,seq,euc,mod,frac,add,sub,mul,divide,num,at,replace,split,collapse,toggle,makeSteps,euclid,makeManual,flatten,emitMini,parseMini,emitLane,emitProject,validateNode,validateProject,validateSampleURL,validateSamples,clone};
+  return { ev,chord,flipNote,midi,rest,seq,euc,mod,frac,add,sub,mul,divide,num,at,replace,split,collapse,toggle,makeSteps,euclid,makeManual,flatten,emitMini,parseMini,emitLane,emitProject,validateNode,validateProject,validateSampleURL,validateSamples,validateArp,arpeggiateNode,clone};
 });
 
 </script>
@@ -525,7 +587,7 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
       makeLane('Bass','c2',8,[0,3,4,7],'Low notes complement the drum pulse.','melody')]};
   }
   let project, presetKey='samba', selected=0, focus=[], picked=0, view='lanes', playing=false, startedAt=0,
-    raf=0, activeCodeMode='visual', customCode='', engineInitialized=false, audioFailure='', queue=Promise.resolve(), pendingStop=Promise.resolve(), playbackRevision=0, applyTimer=null, clickTimer=null, toastTimer=null;
+    raf=0, activeCodeMode='visual', customCode='', engineInitialized=false, audioFailure='', queue=Promise.resolve(), pendingStop=Promise.resolve(), playbackRevision=0, mixRevision=0, applyTimer=null, clickTimer=null, toastTimer=null;
   function selectedLane(){return project.lanes[selected]}
   function rotationOf(l){return l.root.type==='euclidean'?l.root.rotation:(l.rotation||0)}
   function setRotation(l,r){if(l.root.type==='euclidean'){l.root={...l.root,rotation:r};l.rotation=0}else l.rotation=r}
@@ -545,10 +607,25 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
   function manualRoot(){const l=selectedLane();if(l.root.type==='euclidean')l.root=C.makeManual(l.root)}
   function meaningful(){
     project.bpm=clamp(Math.round(+project.bpm||102),35,240);
-    persist();render();
+    ++mixRevision;persist();render();
     if(playing&&$('autoApply').checked&&activeCodeMode==='visual')debounceApply();
   }
   function persist(){try{localStorage.setItem('strudel-canvas-v1',JSON.stringify(project))}catch(_) {}}
+  function setLaneMuted(lane,muted){
+    if(activeCodeMode!=='visual'){
+      notify('Visual lane mute is unavailable in Custom code mode · return to visual');
+      render();return;
+    }
+    if(lane.muted===muted)return;
+    lane.muted=muted;
+    meaningful();
+    // Mute/unmute is a transport action, not a passive edit: ignore the
+    // optional Auto-evaluate preference. Always transmit the latest mix.
+    if(playing){
+      clearTimeout(applyTimer);
+      applyToEngine().catch(e=>notify('Mute update failed: '+(e.message||e)));
+    }
+  }
   function mutateRoot(fn){const l=selectedLane();l.root=fn(l.root);meaningful()}
   function toggleAt(index){
     if(focus.length===0)manualRoot();
@@ -624,9 +701,14 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
         if(nested){const t=document.createElement('span');t.className='subtick';pad.appendChild(t)}
         grid.appendChild(pad)
       });
-      const select=makeButton(children.length+'/1','lane-select',()=>selectLane(i),'Select layer');
-      row.append(name,grid,select);target.appendChild(row);
-    });$('layerCount').textContent=`${project.lanes.length} independent layers`;
+      const mute=makeButton(l.muted?'MUTED':'ON',`lane-mute ${l.muted?'is-muted':'is-on'}`,
+        ()=>setLaneMuted(l,!l.muted), l.muted?'Unmute '+l.name:'Mute '+l.name);
+      mute.setAttribute('aria-label',(l.muted?'Unmute ':'Mute ')+l.name);
+      mute.setAttribute('aria-pressed',String(!!l.muted));
+      mute.disabled=activeCodeMode!=='visual';
+      row.classList.toggle('is-muted',!!l.muted);
+      row.append(name,grid,mute);target.appendChild(row);
+    });$('layerCount').textContent=`${project.lanes.filter(l=>!l.muted).length} of ${project.lanes.length} lanes audible`;
   }
   function renderLens(){
     let l=selectedLane();const root=C.at(l.root,focus);
@@ -684,7 +766,7 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
     const txt=svg('text',{x:cx,y:cy+4,'text-anchor':'middle','font-size':12,fill:'#eff7f3'});txt.textContent='ONE CYCLE';el.appendChild(txt);box.appendChild(el);
   }
   function renderGraph(){const l=selectedLane(),target=$('transformGraph');target.innerHTML='';const steps=l.root.type==='euclidean'?l.root.steps:l.root.children.length;
-    let nodes=[['Source',l.kind==='melody'?'keys '+(l.instrument||'piano'):'sample '+l.sound],['Structure',l.root.type==='euclidean'?`${l.root.pulses} in ${steps} Euclidean`:`${steps} steps · recursive`],['Rotation',rotationOf(l)+' / '+steps+' steps'],['Time',l.speed+'× '+(l.reverse?'reverse':'forward')],['Dynamics',l.gain.toFixed(2)+' gain'],['Output','Strudel audio']];
+    let nodes=[['Source',l.kind==='melody'?'keys '+(l.instrument||'piano'):'sample '+l.sound],['Structure',l.root.type==='euclidean'?`${l.root.pulses} in ${steps} Euclidean`:`${steps} steps · recursive`],...(l.kind==='melody'?[['Arpeggiator',C.validateArp(l.arp).mode]]:[]),['Rotation',rotationOf(l)+' / '+steps+' steps'],['Time',l.speed+'× '+(l.reverse?'reverse':'forward')],['Dynamics',l.muted?'MUTED':l.gain.toFixed(2)+' gain'],['Output',l.muted?'silence':'Strudel audio']];
     nodes.forEach((node,i)=>{const el=document.createElement('div');el.className='transform '+(i===1?'transform-primary':'');const b=document.createElement('strong');b.textContent=node[0];const sm=document.createElement('small');sm.textContent=node[1];el.append(b,sm);target.appendChild(el);if(i<nodes.length-1){const connector=document.createElement('div');connector.className='connector';target.appendChild(connector)}})
   }
   function renderInspector(){
@@ -702,6 +784,12 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
 
     $('speed').value=String(l.speed);$('speedValue').textContent=l.speed+'×';$('gain').value=l.gain;$('gainValue').textContent=Number(l.gain).toFixed(2);
     $('reverse').checked=!!l.reverse;$('muted').checked=!!l.muted;
+    $('muted').disabled=activeCodeMode!=='visual';
+    $('arpeggiatorField').hidden=l.kind!=='melody';
+    const arp=C.validateArp(l.arp);
+    $('arpMode').value=arp.mode;$('arpSteps').value=String(arp.steps);$('arpOctaves').value=String(arp.octaves);
+    $('arpHint').textContent=arp.mode==='off'?'Play chord notes simultaneously':
+      `${arp.steps} notes within each chord cell · ${arp.octaves} octave${arp.octaves===1?'':'s'}`;
     $('miniInput').value=C.emitMini(l.root);
     drawOrbit($('singleOrbit'),l);
   }
@@ -786,10 +874,11 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
   }
   async function applyToEngine(){
     if(!playing)return;
-    const revision=playbackRevision;
+    const revision=playbackRevision, mix=mixRevision;
     const code=effectiveCode();
     return enqueueAudio(async()=>{
-      if(!playing||revision!==playbackRevision)return;
+      // Drop obsolete queued code: a mute or rapid edit supersedes it.
+      if(!playing||revision!==playbackRevision||mix!==mixRevision)return;
       try{
         await window.evaluate(code);
         // A stop may have happened while evaluate() was running.
@@ -841,7 +930,7 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
   }
   async function stop(){
     const revision=++playbackRevision;
-    clearTimeout(applyTimer);playing=false;cancelAnimationFrame(raf);
+    ++mixRevision;clearTimeout(applyTimer);playing=false;cancelAnimationFrame(raf);
     $('playButton').textContent='▶';$('statusDot').classList.remove('on');
     $('statusText').textContent='Stopping audio…';
     document.querySelectorAll('.pad').forEach(p=>p.classList.remove('playhead'));
@@ -908,7 +997,7 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
   function addKeysLane(){if(project.lanes.length>=12){notify('Maximum 12 layers');return}
     const i=project.lanes.length+1;let l=makeLane('Keys '+i,'c4',16,[0,4,8,12],'Play piano, Rhodes or synth notes.','melody');
     l.instrument='piano';l.root=C.makeSteps(16,[0,4,8,12],j=>j===0?'c4':j===4?'e4':j===8?'g4':'b4');
-    l.gain=.32;project.lanes.push(l);selectLane(project.lanes.length-1);meaningful();setView('piano');}
+    l.gain=.32;l.arp={mode:'off',steps:4,octaves:1};project.lanes.push(l);selectLane(project.lanes.length-1);meaningful();setView('piano');}
   const setChoice=(select,value,text)=>{const opt=document.createElement('option');opt.value=value;opt.textContent=text;select.appendChild(opt)};
   function populateSoundSelects(){const l=selectedLane();const drum=$('sourceSound'),keys=$('keyInstrument');drum.innerHTML='';keys.innerHTML='';
     if(l.kind==='melody'&&legacyKeys[l.instrument])l.instrument=legacyKeys[l.instrument];
@@ -928,7 +1017,9 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
   function renderPiano(){const target=$('pianoRoll');target.innerHTML='';const l=selectedLane();$('pianoTitle').textContent=l.name+' · '+(l.instrument||'piano');
     if(l.kind!=='melody'){target.textContent='Select a keys lane in Lanes, or create a new one.';$('pianoRange').textContent='Chromatic keyboard';return}
     const node=selectedSequence();const children=node.children||[];
-    $('pianoFocus').textContent='Subdivisions: '+children.length+' · zoom level '+focus.length;
+    const arp=C.validateArp(l.arp);
+    $('pianoTitle').textContent=l.name+' · '+(l.instrument||'piano')+(l.muted?' · MUTED':'')+(arp.mode!=='off'?' · arp '+arp.mode:'');
+    $('pianoFocus').textContent='Subdivisions: '+children.length+' · zoom level '+focus.length+(arp.mode!=='off'?' · arpeggiating chords':'');
     const octave=+$('pianoOctave').value||3;
     $('pianoRange').textContent=`C${octave}–B${octave+2} · click cells to add notes or chords`;
     pianoNotes(octave).forEach(pitch=>{const row=document.createElement('div');row.className='piano-row'+(pitch.includes('#')||pitch.includes('b')?' sharp':'');
@@ -1012,12 +1103,18 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
   $('gain').oninput=e=>$('gainValue').textContent=(+e.target.value).toFixed(2);
   $('gain').onchange=e=>{selectedLane().gain=+e.target.value;meaningful()};
   $('reverse').onchange=e=>{selectedLane().reverse=e.target.checked;meaningful()};
-  $('muted').onchange=e=>{selectedLane().muted=e.target.checked;meaningful()};
+  $('muted').onchange=e=>setLaneMuted(selectedLane(),e.target.checked);
+  function changeArpeggiator(){
+    if(selectedLane().kind!=='melody')return;
+    selectedLane().arp={mode:$('arpMode').value,steps:+$('arpSteps').value,octaves:+$('arpOctaves').value};
+    C.validateArp(selectedLane().arp);meaningful();
+  }
+  for(const id of ['arpMode','arpSteps','arpOctaves'])$(id).onchange=changeArpeggiator;
   $('parseMini').onclick=()=>{try{const root=C.parseMini($('miniInput').value);C.validateNode(root);selectedLane().root=root;selectedLane().rotation=0;focus=[];picked=0;meaningful();notify('Mini-notation imported into the recursive editor')}
     catch(e){notify('Mini-notation not imported: '+e.message)}};
-  $('editCode').onclick=()=>{if(activeCodeMode==='custom'){$('codeEditor').focus();return}customCode=C.emitProject(project);activeCodeMode='custom';renderCode();$('codeEditor').focus();notify('Custom code mode: visual changes will not overwrite your code')};
-  $('codeEditor').oninput=e=>{if(activeCodeMode==='custom'){customCode=e.target.value;if(playing&&$('autoApply').checked)debounceApply()}};
-  $('returnVisual').onclick=()=>{activeCodeMode='visual';customCode='';renderCode();if(playing&&$('autoApply').checked)debounceApply();notify('Back to visual-generated source')};
+  $('editCode').onclick=()=>{if(activeCodeMode==='custom'){$('codeEditor').focus();return}customCode=C.emitProject(project);activeCodeMode='custom';render();$('codeEditor').focus();notify('Custom code mode: visual changes will not overwrite your code')};
+  $('codeEditor').oninput=e=>{if(activeCodeMode==='custom'){customCode=e.target.value;++mixRevision;if(playing&&$('autoApply').checked)debounceApply()}};
+  $('returnVisual').onclick=()=>{activeCodeMode='visual';customCode='';render();if(playing&&$('autoApply').checked)debounceApply();notify('Back to visual-generated source')};
   $('copyCode').onclick=async()=>{try{await navigator.clipboard.writeText(effectiveCode());notify('Copied current Strudel code')}catch(e){notify('Clipboard unavailable · use the .js export')}};
   $('downloadCode').onclick=()=>download('strudel-canvas.js',effectiveCode());
   $('openStrudel').onclick=()=>{
