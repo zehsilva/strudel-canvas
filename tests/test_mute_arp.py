@@ -11,7 +11,7 @@ window.__ctx={state:'running',async suspend(){this.state='suspended'},async resu
 window.getAudioContext=()=>window.__ctx;
 window.initStrudel=async({prebake})=>{
  window.samples=()=>Promise.resolve();await prebake();
- window.evaluate=async x=>{window.__mixes.push(x)};
+ window.evaluate=async x=>{window.__mixes.push(x);return {valid:true}};
  window.hush=async()=>{};
 };
 </script>"""
@@ -30,7 +30,7 @@ async def test():
   await page.locator('.lane-mute').nth(1).click()
   await page.wait_for_function('(n)=>window.__mixes.length>n',arg=before)
   code=await page.evaluate('window.__mixes.at(-1)')
-  assert '// Caixa (muted)\n  silence' in code and '// Surdo\n  s("bd' in code
+  assert '// Caixa (muted)\n  s("~")' in code and '// Surdo\n  s("bd' in code
   assert '// Chocalho\n  s("hh' in code
   assert await page.locator('.lane-mute').nth(1).get_attribute('aria-pressed')=='true'
   await page.locator('.lane-name').nth(1).click()
