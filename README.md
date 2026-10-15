@@ -59,3 +59,13 @@ python src/tests/transport_race.py
 ```
 
 The browser test mocks Strudel's audio functions to reproduce the ordering race; it does not verify actual audio output.
+
+## Audio transport (v1.3)
+
+**Stop** calls Strudel's `hush()` and additionally suspends the shared Web Audio `AudioContext` using `getAudioContext().suspend()`. This immediately silences audio processing, including active samples/synths/effect tails, even if the scheduler was already stopped. **Play** resumes the same context after the previous Stop operation is complete. The UI shows `Stopped · audio suspended` on confirmed hard stop, or `Stopped · scheduler only` when this browser/bundle does not expose the context. The engine diagnostics panel reports the actual audio context state.
+
+Note: Suspended Web Audio freezes already-active voices; on resuming, the residual tail of a pre-stop note can briefly continue. A later version should provide per-voice shutdown or master-output gain control for tail-free restarts. This test verifies transport behavior with a simulated WebAudio context, not live audio.
+
+```bash
+python src/tests/audio_context_stop.py
+```
