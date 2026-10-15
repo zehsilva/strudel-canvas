@@ -49,7 +49,7 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
 <body>
 <main>
 <header>
-  <div class="brand"><div class="brandmark">∿</div><div><h1>strudel canvas <span class="version">/ 1.1</span></h1><p>RECURSIVE PATTERN STUDIO</p></div></div>
+  <div class="brand"><div class="brandmark">∿</div><div><h1>strudel canvas <span class="version">/ 1.2</span></h1><p>RECURSIVE PATTERN STUDIO</p></div></div>
   <div class="header-right"><button class="pill" id="engineBadge" type="button" title="Show engine diagnostics" aria-label="Show engine diagnostics">◌ Loading Strudel…</button><button class="link-button" id="openStrudel">↗ Strudel REPL</button><button class="link-button" id="saveProject">↓ Save project</button></div>
 </header>
 <aside class="app-nav">
@@ -378,7 +378,7 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
       makeLane('Bass','c2',8,[0,3,4,7],'Low notes complement the drum pulse.','melody')]};
   }
   let project, presetKey='samba', selected=0, focus=[], picked=0, view='lanes', playing=false, startedAt=0,
-    raf=0, activeCodeMode='visual', customCode='', engineInitialized=false, audioFailure='', queue=Promise.resolve(), applyTimer=null, clickTimer=null, toastTimer=null;
+    raf=0, activeCodeMode='visual', customCode='', engineInitialized=false, audioFailure='', queue=Promise.resolve(), playbackRevision=0, applyTimer=null, clickTimer=null, toastTimer=null;
   function selectedLane(){return project.lanes[selected]}
   function rotationOf(l){return l.root.type==='euclidean'?l.root.rotation:(l.rotation||0)}
   function setRotation(l,r){if(l.root.type==='euclidean'){l.root={...l.root,rotation:r};l.rotation=0}else l.rotation=r}
@@ -609,12 +609,32 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
     engineInitialized=true;audioFailure='';
     updateEngineBadge();
   }
+  // Every evaluation and final stop runs through one queue. In-flight evaluations
+  // cannot be canceled by Strudel, so a Stop also queues a *second* hush after
+  // any pending evaluation settles. A revision token invalidates stale updates.
+  function enqueueAudio(action){
+    const job=queue.catch(()=>{}).then(action);
+    queue=job.catch(()=>{});
+    return job;
+  }
   async function applyToEngine(){
     if(!playing)return;
+    const revision=playbackRevision;
     const code=effectiveCode();
-    queue=queue.catch(()=>{}).then(async()=>{try{await window.evaluate(code);$('statusText').textContent='Playing · Strudel'}
-      catch(e){$('statusText').textContent='Audio error';notify(`Strudel evaluation failed: ${e.message||e}`);throw e}});
-    await queue;
+    return enqueueAudio(async()=>{
+      if(!playing||revision!==playbackRevision)return;
+      try{
+        await window.evaluate(code);
+        // A stop may have happened while evaluate() was running.
+        if(playing&&revision===playbackRevision)$('statusText').textContent='Playing · Strudel';
+      }catch(e){
+        if(playing&&revision===playbackRevision){
+          $('statusText').textContent='Audio error';
+          notify(`Strudel evaluation failed: ${e.message||e}`);
+        }
+        throw e;
+      }
+    });
   }
   function startAnimation(){cancelAnimationFrame(raf);startedAt=performance.now();
     const tick=()=>{if(!playing)return;const phase=((performance.now()-startedAt)/(240000/project.bpm))%1;
@@ -622,13 +642,38 @@ button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pi
       raf=requestAnimationFrame(tick)};tick();
   }
   async function play(){if(playing)return;
+    const revision=++playbackRevision;
     $('statusText').textContent='Preparing Strudel…';$('playButton').disabled=true;
-    try{await initEngine();playing=true;await applyToEngine();$('playButton').textContent='■';$('statusDot').classList.add('on');startAnimation()}
-    catch(e){playing=false;audioFailure=String(e.message||e);notify('Could not start Strudel: '+audioFailure);$('statusText').textContent='Playback unavailable';$('engineDiagnostics').hidden=false;updateEngineBadge()}
-    finally{$('playButton').disabled=false}
+    try{
+      await initEngine();
+      if(revision!==playbackRevision)return; // Stop during initialization
+      playing=true;
+      await applyToEngine();
+      if(revision!==playbackRevision||!playing)return; // Stop during evaluation
+      $('playButton').textContent='■';$('statusDot').classList.add('on');startAnimation();
+    }catch(e){
+      if(revision!==playbackRevision)return;
+      playing=false;audioFailure=String(e.message||e);
+      notify('Could not start Strudel: '+audioFailure);
+      $('statusText').textContent='Playback unavailable';$('engineDiagnostics').hidden=false;updateEngineBadge();
+    }finally{$('playButton').disabled=false}
   }
-  async function stop(){clearTimeout(applyTimer);playing=false;cancelAnimationFrame(raf);$('playButton').textContent='▶';$('statusDot').classList.remove('on');$('statusText').textContent='Stopped';
-    document.querySelectorAll('.pad').forEach(p=>p.classList.remove('playhead'));try{if(engineInitialized)await window.hush()}catch(e){notify('Stop error: '+e.message)}}
+  async function stop(){
+    ++playbackRevision;
+    clearTimeout(applyTimer);playing=false;cancelAnimationFrame(raf);
+    $('playButton').textContent='▶';$('statusDot').classList.remove('on');$('statusText').textContent='Stopped';
+    document.querySelectorAll('.pad').forEach(p=>p.classList.remove('playhead'));
+    if(!engineInitialized)return;
+    // Immediately silence active audio. Also wait for any already-started evaluate()
+    // and silence it again, otherwise a slow evaluation resurrects playback.
+    let immediateHush;
+    try{immediateHush=Promise.resolve(window.hush())}
+    catch(e){immediateHush=Promise.reject(e)}
+    const first=immediateHush.catch(e=>{notify('Stop error: '+(e.message||e))});
+    try{
+      await enqueueAudio(async()=>{await first;await window.hush()});
+    }catch(e){notify('Stop error: '+(e.message||e));$('statusText').textContent='Stop failed'}
+  }
   function download(name,body,type='text/plain'){
     const a=document.createElement('a'),url=URL.createObjectURL(new Blob([body],{type}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
   }
