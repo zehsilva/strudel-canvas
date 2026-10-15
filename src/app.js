@@ -40,7 +40,7 @@
       makeLane('Bass','c2',8,[0,3,4,7],'Low notes complement the drum pulse.','melody')]};
   }
   let project, presetKey='samba', selected=0, focus=[], picked=0, view='lanes', playing=false, startedAt=0,
-    raf=0, activeCodeMode='visual', customCode='', engineInitialized=false, audioFailure='', queue=Promise.resolve(), pendingStop=Promise.resolve(), playbackRevision=0, applyTimer=null, clickTimer=null, toastTimer=null;
+    raf=0, activeCodeMode='visual', customCode='', engineInitialized=false, audioFailure='', queue=Promise.resolve(), pendingStop=Promise.resolve(), playbackRevision=0, mixRevision=0, applyTimer=null, clickTimer=null, toastTimer=null;
   function selectedLane(){return project.lanes[selected]}
   function rotationOf(l){return l.root.type==='euclidean'?l.root.rotation:(l.rotation||0)}
   function setRotation(l,r){if(l.root.type==='euclidean'){l.root={...l.root,rotation:r};l.rotation=0}else l.rotation=r}
@@ -60,10 +60,25 @@
   function manualRoot(){const l=selectedLane();if(l.root.type==='euclidean')l.root=C.makeManual(l.root)}
   function meaningful(){
     project.bpm=clamp(Math.round(+project.bpm||102),35,240);
-    persist();render();
+    ++mixRevision;persist();render();
     if(playing&&$('autoApply').checked&&activeCodeMode==='visual')debounceApply();
   }
   function persist(){try{localStorage.setItem('strudel-canvas-v1',JSON.stringify(project))}catch(_) {}}
+  function setLaneMuted(lane,muted){
+    if(activeCodeMode!=='visual'){
+      notify('Visual lane mute is unavailable in Custom code mode · return to visual');
+      render();return;
+    }
+    if(lane.muted===muted)return;
+    lane.muted=muted;
+    meaningful();
+    // Mute/unmute is a transport action, not a passive edit: ignore the
+    // optional Auto-evaluate preference. Always transmit the latest mix.
+    if(playing){
+      clearTimeout(applyTimer);
+      applyToEngine().catch(e=>notify('Mute update failed: '+(e.message||e)));
+    }
+  }
   function mutateRoot(fn){const l=selectedLane();l.root=fn(l.root);meaningful()}
   function toggleAt(index){
     if(focus.length===0)manualRoot();
@@ -139,9 +154,14 @@
         if(nested){const t=document.createElement('span');t.className='subtick';pad.appendChild(t)}
         grid.appendChild(pad)
       });
-      const select=makeButton(children.length+'/1','lane-select',()=>selectLane(i),'Select layer');
-      row.append(name,grid,select);target.appendChild(row);
-    });$('layerCount').textContent=`${project.lanes.length} independent layers`;
+      const mute=makeButton(l.muted?'MUTED':'ON',`lane-mute ${l.muted?'is-muted':'is-on'}`,
+        ()=>setLaneMuted(l,!l.muted), l.muted?'Unmute '+l.name:'Mute '+l.name);
+      mute.setAttribute('aria-label',(l.muted?'Unmute ':'Mute ')+l.name);
+      mute.setAttribute('aria-pressed',String(!!l.muted));
+      mute.disabled=activeCodeMode!=='visual';
+      row.classList.toggle('is-muted',!!l.muted);
+      row.append(name,grid,mute);target.appendChild(row);
+    });$('layerCount').textContent=`${project.lanes.filter(l=>!l.muted).length} of ${project.lanes.length} lanes audible`;
   }
   function renderLens(){
     let l=selectedLane();const root=C.at(l.root,focus);
@@ -199,7 +219,7 @@
     const txt=svg('text',{x:cx,y:cy+4,'text-anchor':'middle','font-size':12,fill:'#eff7f3'});txt.textContent='ONE CYCLE';el.appendChild(txt);box.appendChild(el);
   }
   function renderGraph(){const l=selectedLane(),target=$('transformGraph');target.innerHTML='';const steps=l.root.type==='euclidean'?l.root.steps:l.root.children.length;
-    let nodes=[['Source',l.kind==='melody'?'keys '+(l.instrument||'piano'):'sample '+l.sound],['Structure',l.root.type==='euclidean'?`${l.root.pulses} in ${steps} Euclidean`:`${steps} steps · recursive`],['Rotation',rotationOf(l)+' / '+steps+' steps'],['Time',l.speed+'× '+(l.reverse?'reverse':'forward')],['Dynamics',l.gain.toFixed(2)+' gain'],['Output','Strudel audio']];
+    let nodes=[['Source',l.kind==='melody'?'keys '+(l.instrument||'piano'):'sample '+l.sound],['Structure',l.root.type==='euclidean'?`${l.root.pulses} in ${steps} Euclidean`:`${steps} steps · recursive`],...(l.kind==='melody'?[['Arpeggiator',C.validateArp(l.arp).mode]]:[]),['Rotation',rotationOf(l)+' / '+steps+' steps'],['Time',l.speed+'× '+(l.reverse?'reverse':'forward')],['Dynamics',l.muted?'MUTED':l.gain.toFixed(2)+' gain'],['Output',l.muted?'silence':'Strudel audio']];
     nodes.forEach((node,i)=>{const el=document.createElement('div');el.className='transform '+(i===1?'transform-primary':'');const b=document.createElement('strong');b.textContent=node[0];const sm=document.createElement('small');sm.textContent=node[1];el.append(b,sm);target.appendChild(el);if(i<nodes.length-1){const connector=document.createElement('div');connector.className='connector';target.appendChild(connector)}})
   }
   function renderInspector(){
@@ -217,6 +237,12 @@
 
     $('speed').value=String(l.speed);$('speedValue').textContent=l.speed+'×';$('gain').value=l.gain;$('gainValue').textContent=Number(l.gain).toFixed(2);
     $('reverse').checked=!!l.reverse;$('muted').checked=!!l.muted;
+    $('muted').disabled=activeCodeMode!=='visual';
+    $('arpeggiatorField').hidden=l.kind!=='melody';
+    const arp=C.validateArp(l.arp);
+    $('arpMode').value=arp.mode;$('arpSteps').value=String(arp.steps);$('arpOctaves').value=String(arp.octaves);
+    $('arpHint').textContent=arp.mode==='off'?'Play chord notes simultaneously':
+      `${arp.steps} notes within each chord cell · ${arp.octaves} octave${arp.octaves===1?'':'s'}`;
     $('miniInput').value=C.emitMini(l.root);
     drawOrbit($('singleOrbit'),l);
   }
@@ -301,10 +327,11 @@
   }
   async function applyToEngine(){
     if(!playing)return;
-    const revision=playbackRevision;
+    const revision=playbackRevision, mix=mixRevision;
     const code=effectiveCode();
     return enqueueAudio(async()=>{
-      if(!playing||revision!==playbackRevision)return;
+      // Drop obsolete queued code: a mute or rapid edit supersedes it.
+      if(!playing||revision!==playbackRevision||mix!==mixRevision)return;
       try{
         await window.evaluate(code);
         // A stop may have happened while evaluate() was running.
@@ -356,7 +383,7 @@
   }
   async function stop(){
     const revision=++playbackRevision;
-    clearTimeout(applyTimer);playing=false;cancelAnimationFrame(raf);
+    ++mixRevision;clearTimeout(applyTimer);playing=false;cancelAnimationFrame(raf);
     $('playButton').textContent='▶';$('statusDot').classList.remove('on');
     $('statusText').textContent='Stopping audio…';
     document.querySelectorAll('.pad').forEach(p=>p.classList.remove('playhead'));
@@ -423,7 +450,7 @@
   function addKeysLane(){if(project.lanes.length>=12){notify('Maximum 12 layers');return}
     const i=project.lanes.length+1;let l=makeLane('Keys '+i,'c4',16,[0,4,8,12],'Play piano, Rhodes or synth notes.','melody');
     l.instrument='piano';l.root=C.makeSteps(16,[0,4,8,12],j=>j===0?'c4':j===4?'e4':j===8?'g4':'b4');
-    l.gain=.32;project.lanes.push(l);selectLane(project.lanes.length-1);meaningful();setView('piano');}
+    l.gain=.32;l.arp={mode:'off',steps:4,octaves:1};project.lanes.push(l);selectLane(project.lanes.length-1);meaningful();setView('piano');}
   const setChoice=(select,value,text)=>{const opt=document.createElement('option');opt.value=value;opt.textContent=text;select.appendChild(opt)};
   function populateSoundSelects(){const l=selectedLane();const drum=$('sourceSound'),keys=$('keyInstrument');drum.innerHTML='';keys.innerHTML='';
     if(l.kind==='melody'&&legacyKeys[l.instrument])l.instrument=legacyKeys[l.instrument];
@@ -443,7 +470,9 @@
   function renderPiano(){const target=$('pianoRoll');target.innerHTML='';const l=selectedLane();$('pianoTitle').textContent=l.name+' · '+(l.instrument||'piano');
     if(l.kind!=='melody'){target.textContent='Select a keys lane in Lanes, or create a new one.';$('pianoRange').textContent='Chromatic keyboard';return}
     const node=selectedSequence();const children=node.children||[];
-    $('pianoFocus').textContent='Subdivisions: '+children.length+' · zoom level '+focus.length;
+    const arp=C.validateArp(l.arp);
+    $('pianoTitle').textContent=l.name+' · '+(l.instrument||'piano')+(l.muted?' · MUTED':'')+(arp.mode!=='off'?' · arp '+arp.mode:'');
+    $('pianoFocus').textContent='Subdivisions: '+children.length+' · zoom level '+focus.length+(arp.mode!=='off'?' · arpeggiating chords':'');
     const octave=+$('pianoOctave').value||3;
     $('pianoRange').textContent=`C${octave}–B${octave+2} · click cells to add notes or chords`;
     pianoNotes(octave).forEach(pitch=>{const row=document.createElement('div');row.className='piano-row'+(pitch.includes('#')||pitch.includes('b')?' sharp':'');
@@ -527,12 +556,18 @@
   $('gain').oninput=e=>$('gainValue').textContent=(+e.target.value).toFixed(2);
   $('gain').onchange=e=>{selectedLane().gain=+e.target.value;meaningful()};
   $('reverse').onchange=e=>{selectedLane().reverse=e.target.checked;meaningful()};
-  $('muted').onchange=e=>{selectedLane().muted=e.target.checked;meaningful()};
+  $('muted').onchange=e=>setLaneMuted(selectedLane(),e.target.checked);
+  function changeArpeggiator(){
+    if(selectedLane().kind!=='melody')return;
+    selectedLane().arp={mode:$('arpMode').value,steps:+$('arpSteps').value,octaves:+$('arpOctaves').value};
+    C.validateArp(selectedLane().arp);meaningful();
+  }
+  for(const id of ['arpMode','arpSteps','arpOctaves'])$(id).onchange=changeArpeggiator;
   $('parseMini').onclick=()=>{try{const root=C.parseMini($('miniInput').value);C.validateNode(root);selectedLane().root=root;selectedLane().rotation=0;focus=[];picked=0;meaningful();notify('Mini-notation imported into the recursive editor')}
     catch(e){notify('Mini-notation not imported: '+e.message)}};
-  $('editCode').onclick=()=>{if(activeCodeMode==='custom'){$('codeEditor').focus();return}customCode=C.emitProject(project);activeCodeMode='custom';renderCode();$('codeEditor').focus();notify('Custom code mode: visual changes will not overwrite your code')};
-  $('codeEditor').oninput=e=>{if(activeCodeMode==='custom'){customCode=e.target.value;if(playing&&$('autoApply').checked)debounceApply()}};
-  $('returnVisual').onclick=()=>{activeCodeMode='visual';customCode='';renderCode();if(playing&&$('autoApply').checked)debounceApply();notify('Back to visual-generated source')};
+  $('editCode').onclick=()=>{if(activeCodeMode==='custom'){$('codeEditor').focus();return}customCode=C.emitProject(project);activeCodeMode='custom';render();$('codeEditor').focus();notify('Custom code mode: visual changes will not overwrite your code')};
+  $('codeEditor').oninput=e=>{if(activeCodeMode==='custom'){customCode=e.target.value;++mixRevision;if(playing&&$('autoApply').checked)debounceApply()}};
+  $('returnVisual').onclick=()=>{activeCodeMode='visual';customCode='';render();if(playing&&$('autoApply').checked)debounceApply();notify('Back to visual-generated source')};
   $('copyCode').onclick=async()=>{try{await navigator.clipboard.writeText(effectiveCode());notify('Copied current Strudel code')}catch(e){notify('Clipboard unavailable · use the .js export')}};
   $('downloadCode').onclick=()=>download('strudel-canvas.js',effectiveCode());
   $('openStrudel').onclick=()=>{
