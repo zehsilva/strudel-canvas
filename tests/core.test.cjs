@@ -38,3 +38,47 @@ test('all built-in and legacy keyboard patches have playable Strudel oscillator 
    assert.match(code,/\.s\("(triangle|square|sine)"\)/);
  }
 });
+
+
+test('mute keeps original stack slots with no cross-track reassignment',()=>{
+ const mk=(name,sound)=>({name,kind:'drum',sound,root:C.makeSteps(4,[0,2],sound),speed:1,gain:.6,muted:false});
+ const p={format:'strudel-canvas-v1',bpm:110,lanes:[mk('Kick','bd'),mk('Snare','sd'),mk('Hat','hh')]};
+ const original=p.lanes.map(C.emitLane);
+ p.lanes[1].muted=true;
+ assert.deepEqual(p.lanes.map(C.emitLane),[original[0],'silence',original[2]]);
+ assert.match(C.emitProject(p),/\/\/ Snare \(muted\)\n  silence/);
+ p.lanes[1].muted=false;
+ assert.deepEqual(p.lanes.map(C.emitLane),original);
+ p.lanes.forEach(l=>l.muted=true);
+ assert.deepEqual(p.lanes.map(C.emitLane),['silence','silence','silence']);
+});
+test('chord arpeggiator preserves original notes with nested timing',()=>{
+ const root=C.seq([C.chord(['g4','c4','e4']),C.rest(),C.seq([C.chord(['c3','g3']),C.ev('d3')])]);
+ const saved=JSON.stringify(root);
+ assert.equal(C.emitMini(C.arpeggiateNode(root,{mode:'up',steps:6,octaves:1})),'[c4 e4 g4 c4 e4 g4] ~ [[c3 g3 c3 g3 c3 g3] d3]');
+ assert.equal(C.emitMini(C.arpeggiateNode(root,{mode:'down',steps:3,octaves:1})),'[g4 e4 c4] ~ [[g3 c3 g3] d3]');
+ assert.equal(C.emitMini(C.arpeggiateNode(root,{mode:'updown',steps:6,octaves:1})),'[c4 e4 g4 e4 c4 e4] ~ [[c3 g3 c3 g3 c3 g3] d3]');
+ assert.equal(C.emitMini(C.arpeggiateNode(C.seq([C.chord(['c4','e4'])]),{mode:'up',steps:4,octaves:2})),'[c4 e4 c5 e5]');
+ assert.equal(JSON.stringify(root),saved);
+ assert.equal(C.emitMini(C.arpeggiateNode(root,{mode:'off'})),C.emitMini(root));
+});
+test('arpeggiator affects keys only and mute overrides lane safely',()=>{
+ const k={name:'Keys',kind:'melody',instrument:'triangle',root:C.seq([C.chord(['c4','e4','g4']),C.rest()]),speed:1,gain:.4,arp:{mode:'down',steps:3,octaves:1}};
+ const d={name:'Snare',kind:'drum',root:C.seq([C.ev('sd'),C.rest()]),speed:1,gain:.5};
+ const p={format:'strudel-canvas-v1',bpm:100,lanes:[d,k]};
+ assert.equal(C.validateProject(p),true);
+ assert.match(C.emitLane(k),/\[g4 e4 c4\]/);
+ assert.match(C.emitLane(d),/s\("sd ~"\)/);
+ k.muted=true;
+ assert.equal(C.emitLane(k),'silence');
+ assert.match(C.emitProject(p),/\/\/ Keys \(muted\)\n  silence/);
+ k.muted=false;
+ assert.equal(C.emitMini(k.root),'[c4,e4,g4] ~');
+ assert.throws(()=>C.validateArp({mode:'reverse',steps:4,octaves:1}));
+});
+test('collapsing recursive chord subdivisions retains a proper chord',()=>{
+ const root=C.seq([C.seq([C.rest(),C.chord(['c4','e4'])])]);
+ const collapsed=C.collapse(root,[0]);
+ assert.equal(C.emitMini(collapsed),'[c4,e4]');
+ assert.doesNotThrow(()=>C.validateNode(collapsed));
+});
