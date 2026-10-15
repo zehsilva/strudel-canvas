@@ -9,7 +9,7 @@
 <body>
 <main>
 <header>
-  <div class="brand"><div class="brandmark">∿</div><div><h1>strudel canvas <span class="version">/ 1.6</span></h1><p>RECURSIVE PATTERN STUDIO</p></div></div>
+  <div class="brand"><div class="brandmark">∿</div><div><h1>strudel canvas <span class="version">/ 1.7</span></h1><p>RECURSIVE PATTERN STUDIO</p></div></div>
   <div class="header-right"><button class="pill" id="engineBadge" type="button" title="Show engine diagnostics" aria-label="Show engine diagnostics">◌ Loading Strudel…</button><button class="link-button" id="openStrudel">↗ Strudel REPL</button><button class="link-button" id="saveProject">↓ Save project</button></div>
 </header>
 <aside class="app-nav">
@@ -29,7 +29,7 @@
  <div class="title-row"><div><div class="eyebrow">COMPOSITION / <span id="presetTag">Samba study</span></div><h2 id="projectTitle">Samba, unfolded.</h2><p id="projectDesc">A living rhythm constructed from independent cycles.</p></div><div class="upper-action"><button class="mini-button" id="mutate">✦ Variation</button><button class="mini-button" id="resetPreset">↶ Reset</button></div></div>
  <div class="transport"><button class="play" id="playButton" title="Play Strudel" aria-label="Play Strudel">▶</button><div class="transport-label"><i class="pulse" id="statusDot"></i><span id="statusText">Stopped</span></div><div class="sep"></div><div class="transport-field"><span>BPM</span><input type="number" min="35" max="240" value="102" id="bpm" aria-label="BPM"></div><div class="sep"></div><div class="transport-field"><span>CYCLE</span><strong id="cycleTime">2.35s</strong></div><div class="transport-spacer"></div><label class="switch-row"><input type="checkbox" id="autoApply" checked> Auto-evaluate edits</label><button class="mini-button" id="applyLive">↻ Evaluate</button></div>
  <section id="engineDiagnostics" class="engine-diagnostics" hidden aria-label="Strudel engine diagnostics">
-  <div class="engine-diagnostics-head"><strong>Audio engine diagnostics</strong><div><button class="mini-button" id="retryEngine">↻ Retry engine</button><button class="mini-button" id="closeEngineDiag">✕ Close</button></div></div>
+  <div class="engine-diagnostics-head"><strong>Audio engine diagnostics</strong><div><button class="mini-button" id="testTone" title="Test WebAudio output independently of Strudel patterns">♪ Test output</button><button class="mini-button" id="retryEngine">↻ Retry engine</button><button class="mini-button" id="closeEngineDiag">✕ Close</button></div></div>
   <p>Loading Strudel from a CDN is separate from general internet connectivity. The visual editor works without this library.</p>
   <pre id="engineDiagText" aria-live="polite"></pre>
  </section>
