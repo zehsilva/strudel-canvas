@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101217">
+<title>Strudel Canvas · Recursive Visual Live Coding</title>
+<style>
+
+:root{--bg:#101217;--base:#151820;--panel:#1b1f29;--panel2:#212630;--stroke:#303641;--muted:#8993a3;--txt:#f0f2f5;--mint:#9cf1be;--violet:#bb9ffc;--orange:#ffbd7c;--blue:#83caff;--pink:#f69ac0;--line:#303742}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;min-width:700px}button,select,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--mint);outline-offset:3px}button:disabled{cursor:not-allowed;opacity:.4}main{max-width:1800px;margin:0 auto;min-height:100vh;display:grid;grid-template-columns:250px minmax(530px,1fr) 312px;grid-template-rows:72px auto}
+header{grid-column:1/-1;border-bottom:1px solid var(--stroke);display:flex;justify-content:space-between;align-items:center;padding:0 27px;gap:22px;background:#14171e}.brand{display:flex;align-items:center;gap:13px}.brandmark{width:36px;height:36px;border:1.5px solid var(--mint);border-radius:12px;color:var(--mint);display:grid;place-items:center;font-size:24px;font-weight:600}.brand h1{font-size:16px;letter-spacing:-.4px;margin:0}.brand p{font-size:11px;letter-spacing:2px;color:var(--muted);margin:2px 0 0}.header-right{display:flex;align-items:center;gap:14px}.eyebrow{color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-size:10px;font-weight:700}.link-button{background:transparent;border:1px solid var(--stroke);color:#d5d9e1;padding:9px 11px;border-radius:8px;font-size:12px}.link-button:hover{border-color:var(--mint)}.pill{font-size:11px;color:var(--mint);padding:7px 10px;background:#21332a;border-radius:20px;white-space:nowrap}.app-nav{padding:30px 16px;border-right:1px solid var(--stroke);background:#14171d;display:flex;flex-direction:column;gap:25px}.nav-section{display:flex;flex-direction:column;gap:9px}.section-head{display:flex;justify-content:space-between;align-items:center;padding:0 12px 6px}.nav-card{width:100%;border:1px solid transparent;color:#c5ccd6;text-align:left;background:transparent;padding:13px 12px;border-radius:11px;display:flex;gap:11px;align-items:center}.nav-card:hover{background:#22262f}.nav-card.selected{background:#252a32;border-color:#414b4e;color:white}.nav-card .emoji{font-size:17px}.nav-card strong{font-size:13px;font-weight:600;display:block}.nav-card small{font-size:11px;color:var(--muted);display:block;margin-top:3px}.nav-footer{margin-top:auto;border-top:1px solid var(--stroke);padding:21px 11px 0;font-size:12px;line-height:1.55;color:var(--muted)}.nav-footer b{color:#d9dce1;font-weight:500}.center{min-width:0;padding:28px 29px 37px;background:linear-gradient(160deg,#181b23,#14171d 66%)}.title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:15px}.title-row h2{font-size:27px;line-height:1;margin:5px 0 10px;letter-spacing:-1.1px;font-weight:650}.title-row p{margin:0;color:var(--muted);font-size:13px}.upper-action{display:flex;align-items:center;gap:8px}.mini-button{background:#252a32;border:1px solid #353d49;border-radius:8px;padding:9px 12px;color:#dce1e9;font-size:12px;white-space:nowrap}.mini-button:hover{border-color:#8cae9e}.transport{display:flex;flex-wrap:wrap;align-items:center;gap:19px;background:#20242d;border:1px solid var(--stroke);padding:13px 16px;border-radius:15px;margin-top:28px}.play{width:46px;height:46px;background:var(--mint);border:0;color:#122119;border-radius:12px;display:grid;place-items:center;font-size:18px}.play:hover{background:#c0ffd7}.transport-field{display:flex;align-items:center;gap:9px}.transport-field span{color:var(--muted);font-size:11px}.transport-field input{width:52px;color:#fff;background:none;border:none;font-size:20px;font-weight:650;text-align:center}.transport-field input::-webkit-inner-spin-button{display:none}.sep{border-left:1px solid #383e4b;height:30px}.transport-label{display:flex;align-items:center;gap:6px;font-size:12px;color:#c9d0d8}.pulse{display:inline-block;width:7px;height:7px;border-radius:50%;background:#717984}.pulse.on{background:var(--mint);box-shadow:0 0 12px #9cf1be}.transport-spacer{flex:1}.subtle{font-size:11px;color:var(--muted)}.modebar{display:flex;align-items:center;justify-content:space-between;margin:33px 0 17px}.tabset{display:flex;gap:4px;background:#252a33;padding:3px;border-radius:10px}.tab{color:#8f9cac;background:transparent;border:0;padding:9px 15px;border-radius:8px;font-size:12px;font-weight:600}.tab.active{background:#424851;color:#fff}.muted-note{color:#8691a1;font-size:12px}.pattern-panel{background:#1d222b;border:1px solid #313844;border-radius:15px;padding:22px 20px 14px}.grid-header{display:grid;grid-template-columns:140px minmax(0,1fr) 55px;gap:14px;padding:0 0 17px;border-bottom:1px solid #313943}.beat-ruler{display:grid;grid-template-columns:repeat(16,minmax(0,1fr));font-size:10px;color:#78869a;text-align:left;align-items:center}.beat-ruler span{padding-left:5px}.pattern-lane{display:grid;grid-template-columns:140px minmax(0,1fr) 55px;gap:14px;align-items:center;min-height:75px;border-bottom:1px solid #303743}.lane-name{display:flex;align-items:center;gap:10px;min-width:0;cursor:pointer;background:transparent;border:0;color:#e8edf2;text-align:left;padding:6px 2px;border-radius:5px}.lane-name .swatch{height:31px;width:4px;border-radius:5px;flex-shrink:0}.lane-name strong{font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lane-name small{display:block;color:#8592a2;margin-top:4px;font-size:11px}.lane-name.active strong{color:#fff}.lane-name.active .swatch{box-shadow:0 0 10px currentColor}.pad-grid{display:grid;gap:3px;width:100%}.pad{min-width:0;height:32px;border-radius:5px;background:#303743;border:1px solid #3b4450;position:relative;padding:0;transition:background .09s,filter .09s;overflow:hidden}.pad:hover{filter:brightness(1.32)}.pad.active{background:var(--lane);border-color:var(--lane);box-shadow:inset 0 -9px 0 #0000001a}.pad.active:after{content:"";position:absolute;top:8px;bottom:8px;left:50%;width:2px;transform:translateX(-50%);border-radius:4px;background:#10121780}.pad.playhead{outline:2px solid #f2fff4;outline-offset:1px;z-index:1}.pad.subbeat{box-shadow:inset 2px 0 #ffffff11}.lane-select{font-size:11px;border:1px solid #3d4550;color:#c4d1dd;background:#29313a;padding:7px 3px;border-radius:7px}.lane-select:hover{color:white;border-color:#6c8580}.grid-bottom{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-top:17px;font-size:11px;color:#81909d}.add-track{border:1px dashed #48515b;background:transparent;color:#b1d8be;padding:10px 12px;border-radius:8px;font-size:11px}.add-track:hover{border-color:var(--mint)}.graph{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:22px 0 4px}.transform{border:1px solid #414955;background:#282e39;border-radius:10px;padding:10px 12px;font-size:12px;color:#d9dee5;cursor:pointer}.transform:hover{border-color:#a5b49f}.transform small{font-size:10px;color:#9da6b3;display:block;margin-top:4px}.transform-primary{background:#273d33;border-color:#4b7960;color:#bdf9d0}.connector{width:18px;border-bottom:1px dashed #667385}.code-section{margin-top:23px;border:1px solid #333b45;border-radius:14px;background:#141920;overflow:hidden}.code-header{height:45px;padding:0 16px;border-bottom:1px solid #333b45;display:flex;align-items:center;justify-content:space-between}.code-header strong{font-size:12px;font-weight:650}.code-header span{font-size:10px;color:var(--muted)}.code-actions{display:flex;gap:8px;align-items:center}.code-actions button{border:0;background:transparent;color:var(--mint);font-size:11px}.code-actions button:hover{text-decoration:underline}pre{margin:0;padding:16px 18px 19px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65;color:#d7ecdb;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;min-height:170px;max-height:230px;overflow:auto}.code-comment{color:#7d8a96}.right{background:#171b22;border-left:1px solid #303641;padding:28px 21px;min-width:0}.right h3{font-size:16px;font-weight:650;margin:12px 0 5px}.right p.desc{color:#8693a4;font-size:12px;line-height:1.5;margin:0}.orbit{height:252px;width:100%;margin:14px 0 10px;display:grid;place-items:center;background:radial-gradient(circle at center,#242b32 0%,#171b22 65%);border-radius:13px}.orbit svg{width:242px;max-width:100%;height:242px;overflow:visible}.orb-node{cursor:pointer}.orb-node circle{transition:r .16s, opacity .16s}.orb-node:hover circle{stroke:white;stroke-width:2}.inspector-head{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #303641;padding:22px 0 17px}.inspector-head b{font-size:13px}.inspector-head span{font-size:11px;color:var(--mint)}.field{margin-bottom:22px}.field .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:12px;color:#d1d7df}.field .top b{font-size:12px;font-weight:600;color:var(--mint)}.range{width:100%;accent-color:var(--mint);cursor:pointer}.counter{display:flex;align-items:center;justify-content:space-between}.counter span{font-size:12px}.stepcounter{display:flex;gap:7px;align-items:center}.stepcounter button{background:#2d333e;color:white;border:1px solid #454f5b;border-radius:7px;width:29px;height:29px;font-size:18px}.stepcounter strong{width:28px;text-align:center;font-size:13px}.inspector-actions{display:flex;gap:8px;margin-top:22px}.inspector-actions button{flex:1;border:1px solid #46514e;background:#2a3432;color:#dffbe5;padding:11px 5px;border-radius:9px;font-size:11px}.inspector-actions button:hover{background:#375046}.hint{border-top:1px solid var(--stroke);padding-top:19px;font-size:11px;color:#84909f;line-height:1.75;margin-top:22px}.footline{margin-top:17px;font-size:11px;color:#7f8b99}.empty-view{padding:28px;color:#b3bfca;font-size:12px;line-height:1.8}.is-hidden{display:none!important}.toast{position:fixed;bottom:22px;right:22px;padding:11px 15px;background:#2a3d33;border:1px solid #527f60;color:#d4ffe0;border-radius:10px;box-shadow:0 10px 35px #0005;font-size:12px;opacity:0;transform:translateY(8px);transition:.2s;pointer-events:none}.toast.show{opacity:1;transform:translateY(0)}
+@media(max-width:1250px){main{grid-template-columns:190px minmax(430px,1fr) 270px}.center{padding:23px 17px}.app-nav{padding:25px 9px}.right{padding:25px 14px}.pattern-panel{padding:16px 12px}.grid-header,.pattern-lane{grid-template-columns:112px minmax(0,1fr) 46px;gap:8px}.pad-grid{gap:2px}.pad{height:29px}.header-right .pill{display:none}}
+@media(max-width:1010px){main{grid-template-columns:165px minmax(520px,1fr);grid-template-rows:64px auto auto}.right{grid-column:2;grid-row:3;border-left:0;border-top:1px solid var(--stroke);display:grid;grid-template-columns:280px 1fr;gap:10px 30px}.right .eyebrow,.right>h3,.right>.desc,.right>.orbit{grid-column:1}.right .inspector-head,.right>.field,.right>.counter,.right>.inspector-actions,.right>.hint{grid-column:2}.right .inspector-head{grid-row:1}.right>.field{margin:0}.orbit{height:220px}.orbit svg{width:206px;height:206px}.nav-card small{font-size:10px}}
+@media(max-width:745px){body{min-width:350px}main{display:flex;flex-direction:column}header{height:65px;padding:0 15px}.header-right .link-button{display:none}.app-nav{flex-direction:row;padding:8px;gap:3px;overflow:auto}.nav-section{flex-direction:row;gap:4px}.section-head,.nav-footer{display:none}.nav-card{padding:10px}.nav-card small{display:none}.center{padding:20px 11px}.title-row h2{font-size:23px}.title-row p{font-size:11px}.upper-action .mini-button:nth-child(1){display:none}.transport{gap:9px}.grid-header,.pattern-lane{grid-template-columns:87px minmax(0,1fr) 36px;gap:5px}.pattern-panel{padding:12px 8px}.pad{height:27px;border-radius:3px}.lane-name{gap:5px}.lane-name strong{font-size:10px}.lane-name small{font-size:9px}.lane-select{font-size:9px;padding:5px 0}.muted-note{display:none}.right{display:block}.right .orbit{margin:0 auto}.right .field{margin-bottom:20px}}
+/* v1 additions */
+.version{color:#8993a3;font-size:11px}.mint-button{background:#294337;color:#bdf5d0;border-color:#456752}
+.switch-row{font-size:11px;color:#b1bdc7;display:flex;align-items:center;gap:6px;white-space:nowrap}.switch-row input,.switch-line input{accent-color:var(--mint)}
+.lens-head{border-top:1px solid #343d49;margin-top:22px;padding-top:22px;display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}
+.breadcrumbs{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 0;min-height:27px}.crumb{border:1px solid #4d5d5e;background:#273036;border-radius:6px;color:#d8f3df;padding:5px 9px;font-size:11px}.crumb:last-child{background:#304538;border-color:#617f69}.crumb-separator{color:#708a81}
+.lens-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.lens-actions .mini-button{padding:7px 9px}.lens-meta{display:flex;justify-content:space-between;align-items:center;margin:17px 0 10px;font-size:11px;color:#9ca9b8;gap:12px}
+.lens-steps{display:flex;gap:5px;min-height:92px;padding:12px;background:#161b23;border:1px solid #323b46;border-radius:11px;overflow-x:auto}
+.lens-cell{min-width:23px;flex:1;max-width:none;position:relative;border:1px solid #454f5b;background:#28313b;border-radius:7px;color:#c0ced6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:68px;font-size:10px;cursor:pointer}
+.lens-cell.active{background:var(--accent);color:#1b2426;border-color:var(--accent);font-weight:700}
+.lens-cell.selected{outline:2px solid #e8ffef;outline-offset:2px}.lens-cell.nested{background:#35354a;border-color:#6e618e;color:#e0cfef}.lens-cell .idx{opacity:.7;font-size:10px}.lens-cell .val{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px}
+.lens-cell .nested-indicator{font-size:10px;letter-spacing:1px;color:#dfc5ff}.lens-help{color:#798797;font-size:10px;line-height:1.5;margin:11px 0 1px}
+.pad.nested{background:linear-gradient(130deg,#36304d,#353b4c);border-color:#72618d;color:#dccff5;font-size:12px}.pad .pad-label{position:relative;z-index:1}.pad .subtick{height:3px;position:absolute;bottom:1px;left:2px;right:2px;background:repeating-linear-gradient(to right,#ac9ad6 0 2px,transparent 2px 5px);opacity:.75}
+.pad.selected-pad{outline:2px solid #e8fff1;outline-offset:2px;z-index:2}.pad .pad-index{position:absolute;top:2px;left:3px;font-size:8px;opacity:.68}.pad:hover .pad-label{opacity:1}
+.wide-select{width:100%;background:#272e39;border:1px solid #414b55;border-radius:8px;color:#e4e7eb;padding:10px;font-size:12px}.mini-input{width:100%;background:#10151c;border:1px solid #414b55;border-radius:8px;color:#d7efdb;padding:10px;font:11px/1.6 ui-monospace,monospace;resize:vertical;min-height:72px}
+.wide-action{width:100%;border:1px solid #51735e;background:#304838;color:#cdf7d5;border-radius:7px;padding:9px 6px;margin-top:7px;font-size:11px}.wide-action:hover{background:#3d5847}
+.switch-line{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:11px;color:#c2ccd7}.divider-lite{height:1px;background:#333c46;margin:18px 0}
+#codeEditor{width:100%;height:218px;min-height:165px;resize:vertical;outline:0;border:0;padding:18px 18px;background:#141920;color:#c6e9d3;font:12px/1.7 ui-monospace,monospace;tab-size:2}
+#codeEditor:not([readonly]){background:#181d27;color:#fff}#codeEditor:focus-visible{outline:2px solid #5c806a;outline-offset:-3px}.code-footer{display:flex;justify-content:space-between;gap:16px;align-items:center;border-top:1px solid #303742;color:#8a97a4;padding:9px 15px;font-size:10px}.code-footer button{font-size:10px;padding:7px}.code-actions button{white-space:nowrap}
+.all-orbits{display:flex;justify-content:center;min-height:300px;align-items:center}.orb-selected{stroke:#e9fff0;stroke-width:2}.footline code,.hint code{background:#273039;border-radius:3px;padding:2px 3px;color:#c6e7d3}
+@media(max-width:745px){.lens-head{align-items:flex-start}.lens-steps{padding:8px}.lens-cell{min-width:26px}.modebar{flex-wrap:wrap;gap:10px}.switch-row{display:none}}
+
+[hidden]{display:none!important}
+
+/* Engine load status / diagnostics (v1.1) */
+button.pill{border:1px solid #3b4e43;cursor:pointer;white-space:nowrap}button.pill:hover{border-color:var(--mint)}
+.engine-diagnostics{margin-top:13px;padding:15px 17px;background:#28232a;border:1px solid #665444;border-radius:12px}
+.engine-diagnostics[hidden]{display:none!important}
+.engine-diagnostics-head{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.engine-diagnostics-head strong{font-size:13px}.engine-diagnostics-head>div{display:flex;gap:8px}
+.engine-diagnostics p{font-size:12px;color:#c1b7b1;line-height:1.5;margin:10px 0}
+.engine-diagnostics pre{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;max-height:210px;overflow:auto;min-height:0;padding:12px;background:#1a1920;border-radius:8px;font-size:11px;color:#e4d9d2}
+
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div class="brand"><div class="brandmark">∿</div><div><h1>strudel canvas <span class="version">/ 1.1</span></h1><p>RECURSIVE PATTERN STUDIO</p></div></div>
+  <div class="header-right"><button class="pill" id="engineBadge" type="button" title="Show engine diagnostics" aria-label="Show engine diagnostics">◌ Loading Strudel…</button><button class="link-button" id="openStrudel">↗ Strudel REPL</button><button class="link-button" id="saveProject">↓ Save project</button></div>
+</header>
+<aside class="app-nav">
+ <div class="nav-section"><div class="section-head"><span class="eyebrow">Project sketches</span><span class="eyebrow">03</span></div>
+ <button class="nav-card selected" data-preset="samba"><span class="emoji">☀</span><span><strong>Samba study</strong><small>Nested percussion · 102 BPM</small></span></button>
+ <button class="nav-card" data-preset="broken"><span class="emoji">◈</span><span><strong>Broken rhythm</strong><small>Asymmetric phases · 128 BPM</small></span></button>
+ <button class="nav-card" data-preset="minimal"><span class="emoji">◉</span><span><strong>Minimal pulse</strong><small>Euclidean · 112 BPM</small></span></button></div>
+ <div class="nav-section"><div class="section-head"><span class="eyebrow">Workspace</span></div>
+ <button class="nav-card" id="composeNav"><span class="emoji">▦</span><span><strong>Visual composition</strong><small>Cycle and recursive lens</small></span></button>
+ <button class="nav-card" id="codeNav"><span class="emoji">⌘</span><span><strong>Code bridge</strong><small>Custom code remains separate</small></span></button>
+ <button class="nav-card" id="importProject"><span class="emoji">⇧</span><span><strong>Import project</strong><small>Restore .json sketch</small></span></button></div>
+ <div class="nav-footer"><b>Pattern-first, not piano-roll-first.</b><br>Double-click a step to subdivide it. Each level divides its parent's time without changing the cycle length.<br><br><span class="kbd">Space</span> Play / stop · <span class="kbd">Esc</span> Up one level</div>
+</aside>
+<section class="center">
+ <div class="title-row"><div><div class="eyebrow">COMPOSITION / <span id="presetTag">Samba study</span></div><h2 id="projectTitle">Samba, unfolded.</h2><p id="projectDesc">A living rhythm constructed from independent cycles.</p></div><div class="upper-action"><button class="mini-button" id="mutate">✦ Variation</button><button class="mini-button" id="resetPreset">↶ Reset</button></div></div>
+ <div class="transport"><button class="play" id="playButton" title="Play Strudel" aria-label="Play Strudel">▶</button><div class="transport-label"><i class="pulse" id="statusDot"></i><span id="statusText">Stopped</span></div><div class="sep"></div><div class="transport-field"><span>BPM</span><input type="number" min="35" max="240" value="102" id="bpm" aria-label="BPM"></div><div class="sep"></div><div class="transport-field"><span>CYCLE</span><strong id="cycleTime">2.35s</strong></div><div class="transport-spacer"></div><label class="switch-row"><input type="checkbox" id="autoApply" checked> Auto-evaluate edits</label><button class="mini-button" id="applyLive">↻ Evaluate</button></div>
+ <section id="engineDiagnostics" class="engine-diagnostics" hidden aria-label="Strudel engine diagnostics">
+  <div class="engine-diagnostics-head"><strong>Audio engine diagnostics</strong><div><button class="mini-button" id="retryEngine">↻ Retry engine</button><button class="mini-button" id="closeEngineDiag">✕ Close</button></div></div>
+  <p>Loading Strudel from a CDN is separate from general internet connectivity. The visual editor works without this library.</p>
+  <pre id="engineDiagText" aria-live="polite"></pre>
+ </section>
+ <div class="modebar"><div class="tabset"><button class="tab active" data-view="lanes">▦ Lanes</button><button class="tab" data-view="orbit">◉ Orbits</button><button class="tab" data-view="transforms">↗ Transforms</button></div><span class="muted-note">One cycle = four beats · different subdivisions coexist</span></div>
+ <div class="pattern-panel" id="patternPanel">
+  <div class="grid-header"><div class="eyebrow">PATTERN LAYERS</div><div class="beat-ruler"><span>1</span><span></span><span></span><span></span><span>2</span><span></span><span></span><span></span><span>3</span><span></span><span></span><span></span><span>4</span><span></span><span></span><span></span></div><div class="eyebrow">CYCLE</div></div>
+  <div id="lanes"></div>
+  <div class="grid-bottom"><button class="add-track" id="addLane">＋ Add pattern layer</button><span id="layerCount">5 independent layers</span></div>
+  <div class="lens-head"><div><span class="eyebrow">RECURSIVE LENS</span><div class="breadcrumbs" id="crumbs"></div></div><div class="lens-actions"><button id="goUp" class="mini-button">↑ Up</button><button id="dive" class="mini-button">↳ Enter</button><button id="split2" class="mini-button mint-button">⊞ Split ×2</button><button id="split3" class="mini-button">⊞ ×3</button><button id="collapse" class="mini-button">− Collapse</button></div></div>
+  <div class="lens-meta"><span id="lensDescription">Choose a step to edit its nested rhythm.</span><span id="focusTime">0–1 cycle</span></div>
+  <div class="lens-steps" id="lensSteps"></div>
+  <div class="lens-help">Click: toggle event/rest · Double-click: enter or subdivide · Shift+click: split in two. Each cell occupies an equal fraction of its parent.</div>
+ </div>
+ <div id="orbitPanel" class="pattern-panel is-hidden"><div class="eyebrow">CYCLE ORBITS</div><div id="allOrbits" class="all-orbits"></div><div class="grid-bottom"><span>Concentric rings display independent cycle subdivisions.</span><button class="add-track" id="orbitGoBack">Edit pattern →</button></div></div>
+ <div id="transformsPanel" class="pattern-panel is-hidden"><div class="eyebrow">FUNCTIONAL PATTERN PIPELINE</div><div class="graph" id="transformGraph"></div><p class="muted-note">Transformations remain symbolic in the generated Strudel expression. The recursive lens preserves structure of nested sequences.</p></div>
+ <div class="code-section" id="codeSection"><div class="code-header"><div><strong>⌘ Strudel code</strong> <span id="codeModeLabel">· generated from visual IR</span></div><div class="code-actions"><button id="copyCode">Copy</button><button id="downloadCode">↓ .js</button><button id="editCode">Edit code</button></div></div>
+ <textarea id="codeEditor" spellcheck="false" readonly aria-label="Strudel source code"></textarea>
+ <div class="code-footer"><span id="codeNotice">The visual pattern is authoritative. Turn on Edit code to run custom Strudel.</span><button class="mini-button" id="returnVisual" hidden>↶ Return to visual</button></div></div>
+ <div class="footline">The visual editor works offline. Strudel audio requires the engine bundle and may require sample downloads. Click the engine status for connection diagnostics and retry.</div>
+</section>
+<aside class="right">
+ <span class="eyebrow">SELECTED LAYER</span><h3 id="inspectorName">Surdo</h3><p class="desc" id="inspectorDescription">Deep pulse that anchors the pattern.</p><div class="orbit" id="singleOrbit"></div><div class="inspector-head"><b>Pattern controls</b><span id="inspectorMode">Manual</span></div>
+ <div class="field"><div class="top"><span>Source / sample</span></div><select id="sourceSound" class="wide-select"><option value="bd">bd · kick</option><option value="sd">sd · snare</option><option value="hh">hh · closed hat</option><option value="oh">oh · open hat</option><option value="rim">rim · rimshot</option><option value="cp">cp · clap</option><option value="lt">lt · low tom</option><option value="c2">c2 · melodic note</option></select></div>
+ <div class="field"><div class="top"><span>Euclidean pulses</span><b id="pulseValue">3 / 16</b></div><input class="range" type="range" min="0" max="16" value="3" id="pulsesRange"></div>
+ <div class="field"><div class="top"><span>Cycle rotation</span><b id="rotationValue">0 steps</b></div><input class="range" type="range" min="-15" max="15" value="0" id="rotationRange"></div>
+ <div class="field counter"><span>Root subdivisions</span><div class="stepcounter"><button id="stepsMinus" aria-label="Remove last subdivision">−</button><strong id="stepsValue">16</strong><button id="stepsPlus" aria-label="Add subdivision">+</button></div></div>
+ <div class="inspector-actions"><button id="applyEuclid">◎ Make Euclidean</button><button id="shiftPattern">⇢ Rotate +1</button></div>
+ <div class="divider-lite"></div>
+ <div class="field"><div class="top"><span>Time scale</span><b id="speedValue">1×</b></div><select class="wide-select" id="speed"><option value="0.25">¼× (slow)</option><option value="0.5">½× (slow)</option><option value="1">1× normal</option><option value="2">2× fast</option><option value="3">3× fast</option><option value="4">4× fast</option></select></div>
+ <div class="field"><div class="top"><span>Amplitude</span><b id="gainValue">0.60</b></div><input class="range" type="range" id="gain" min="0" max="1" step="0.01" value="0.6"></div>
+ <div class="field switch-line"><label><input type="checkbox" id="reverse"> Reverse time (.rev)</label><label><input type="checkbox" id="muted"> Mute</label></div>
+ <div class="divider-lite"></div>
+ <div class="field"><div class="top"><span>Selected lane mini-notation</span></div><textarea id="miniInput" class="mini-input" spellcheck="false" rows="3" aria-label="Selected lane mini-notation"></textarea><button id="parseMini" class="wide-action">Apply to selected lane</button></div>
+ <div class="hint"><b>Semantic editing</b><br>Brackets like <code>bd [hh hh] ~</code> preserve nested musical time. Unsupported mini-notation is rejected rather than silently flattened.</div>
+</aside>
+</main>
+<input type="file" id="projectFile" accept="application/json,.json" hidden>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+/* Strudel Canvas engine script loader. No blanket 'offline' inference from CDN errors.
+ * Upstream @strudel/web is AGPL-3.0-or-later. */
+(function (root) {
+  'use strict';
+  const candidates = [
+    'https://unpkg.com/@strudel/web@1.3.0',
+    'https://cdn.jsdelivr.net/npm/@strudel/web@1.3.0',
+    'https://unpkg.com/@strudel/web@1.0.3',
+  ];
+  const listeners = new Set();
+  const errors = [];
+  let phase = typeof root.initStrudel === 'function' ? 'ready' : 'idle';
+  let source = phase === 'ready' ? 'Already available on page' : '';
+  let currentPromise = null;
+  let attempt = '';
+  const latest = () => ({ phase, source, attempt, errors: errors.slice(),
+    browserOnlineHint: typeof navigator !== 'undefined' ? navigator.onLine : null,
+    protocol: location.protocol, origin: location.origin });
+  function publish(){const snapshot=latest();for(const listener of listeners)try{listener(snapshot)}catch(e){console.error('Engine diagnostics listener:',e)}}
+  function setPhase(next, from=''){phase=next;if(from)attempt=from;publish()}
+  function loadScript(url, timeoutMs=10500) {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src=url;script.async=true;
+      let settled=false;
+      const finish=(failure)=>{
+        if(settled)return;
+        settled=true;clearTimeout(timer);
+        script.onload=null;script.onerror=null;
+        if(failure){script.remove();reject(failure)}else resolve();
+      };
+      const timer=setTimeout(()=>finish(new Error('Timed out after '+Math.round(timeoutMs/1000)+'s (CDN, browser policy, or network)')),timeoutMs);
+      script.onload=()=>typeof root.initStrudel==='function'
+        ? finish(null)
+        : finish(new Error('Script downloaded, but it did not expose initStrudel (incompatible build)'));
+      script.onerror=()=>finish(new Error('Script request failed or was blocked (network, CSP, browser extension, or CDN)'));
+      document.head.appendChild(script);
+    });
+  }
+  function load(retry=false) {
+    if(typeof root.initStrudel==='function') {
+      phase='ready';source=source||'Previously loaded script';publish();return Promise.resolve(latest());
+    }
+    if(currentPromise)return currentPromise;
+    if(phase==='error'&&!retry)return Promise.reject(new Error('Strudel CDN load failed; use Retry engine for another attempt.'));
+    errors.length=0;source='';setPhase('loading',candidates[0]);
+    currentPromise=(async()=>{
+      for(const url of candidates){
+        setPhase('loading',url);
+        try{
+          await loadScript(url);
+          source=url;setPhase('ready',url);
+          return latest();
+        }catch(err){
+          errors.push({url,reason:String(err?.message||err)});
+          publish();
+        }
+      }
+      setPhase('error');
+      throw new Error('Unable to load @strudel/web from any CDN. This does not prove your browser is offline.');
+    })().finally(()=>{currentPromise=null});
+    return currentPromise;
+  }
+  root.StrudelCanvasEngineLoader=Object.freeze({load,state:latest,subscribe(fn){listeners.add(fn);fn(latest());return()=>listeners.delete(fn)}});
+})(window);
+
+</script>
+<script>
+/* Strudel Canvas Pattern IR. No DOM, audio, or external dependencies. */
+(function (root, factory) {
+  const lib = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = lib;
+  root.StrudelCanvasCore = lib;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+  let counter = 0;
+  const id = () => `n${++counter}`;
+  const ev = value => ({ id: id(), type: 'event', value: String(value) });
+  const rest = () => ({ id: id(), type: 'rest' });
+  const seq = children => ({ id: id(), type: 'sequence', children });
+  const euc = (value,pulses,steps,rotation=0) => ({id:id(),type:'euclidean',value,pulses,steps,rotation});
+  const mod = (a,n) => ((a % n) + n) % n;
+  const gcd = (a,b) => {a=Math.abs(a); b=Math.abs(b); while(b){[a,b]=[b,a%b]} return a||1};
+  const frac = (n,d=1) => {if(!Number.isSafeInteger(n)||!Number.isSafeInteger(d)||d<=0) throw Error('Invalid rational time');const g=gcd(n,d);return {n:n/g,d:d/g}};
+  const add = (a,b) => frac(a.n*b.d + b.n*a.d,a.d*b.d);
+  const sub = (a,b) => frac(a.n*b.d - b.n*a.d,a.d*b.d);
+  const mul = (a,b) => frac(a.n*b.n,a.d*b.d);
+  const divide = (a,b) => frac(a.n*b.d,a.d*b.n);
+  const num = a => a.n/a.d;
+  const clone = v => JSON.parse(JSON.stringify(v));
+  const at = (node,path=[]) => path.reduce((n,i) => {
+    if(n.type!=='sequence'||!n.children[i])throw Error('No pattern at this path');return n.children[i];
+  },node);
+  function replace(node,path,next){
+    if(!path.length)return next;
+    if(node.type!=='sequence')throw Error('Expected a subdivision');
+    const [i,...restPath]=path;
+    if(i<0||i>=node.children.length)throw Error('Invalid step');
+    return {...node,children:node.children.map((c,j)=>j===i?replace(c,restPath,next):c)};
+  }
+  function split(node,path,count=2){
+    if(!Number.isInteger(count)||count<2||count>16)throw Error('Invalid split size');
+    const target=at(node,path);
+    if(target.type==='sequence')throw Error('Already subdivided');
+    if(target.type==='euclidean')throw Error('Convert Euclidean rhythm to steps before splitting');
+    return replace(node,path,seq([target,...Array.from({length:count-1},()=>rest())]));
+  }
+  function collapse(node,path){
+    const target=at(node,path);
+    if(target.type!=='sequence')throw Error('Not a subdivision');
+    const first=flatten(target).find(h=>h.value!==null);
+    return replace(node,path,first?ev(first.value):rest());
+  }
+  function toggle(node,path,value){
+    const target=at(node,path);
+    if(target.type!=='event'&&target.type!=='rest')throw Error('Can only toggle an event or a rest');
+    return replace(node,path,target.type==='event'?rest():ev(value));
+  }
+  function makeSteps(steps,hits,value){
+    return seq(Array.from({length:steps},(_,i)=>hits.includes(i)?ev(typeof value==='function'?value(i):value):rest()));
+  }
+  // Bjorklund-style distribution consistent with the original prototype.
+  function euclid(pulses,steps){
+    if(!Number.isInteger(pulses)||!Number.isInteger(steps)||steps<1||pulses<0||pulses>steps)throw Error('Invalid Euclidean parameters');
+    if(pulses===0)return Array(steps).fill(false);
+    if(pulses===steps)return Array(steps).fill(true);
+    let on=Array.from({length:pulses},()=>[true]),off=Array.from({length:steps-pulses},()=>[false]);
+    while(Math.min(on.length,off.length)>1){let n=Math.min(on.length,off.length),merge=[];
+      for(let j=0;j<n;j++)merge.push([...on[j],...off[j]]);
+      on=[...merge,...on.slice(n)];off=off.slice(n);
+    }
+    return [...on,...off].flat().slice(0,steps);
+  }
+  function makeManual(node){
+    if(node.type!=='euclidean')return node;
+    const pattern=euclid(node.pulses,node.steps);const children=Array.from({length:node.steps},(_,i)=>pattern[mod(i-node.rotation,node.steps)]?ev(node.value):rest());
+    return seq(children);
+  }
+  // Each descendant interval has exact rational boundaries in the master cycle.
+  function flatten(node,start=frac(0),span=frac(1),path=[]){
+    if(node.type==='sequence'){
+      const dt=divide(span,frac(node.children.length));
+      return node.children.flatMap((child,i)=>flatten(child,add(start,mul(dt,frac(i))),dt,[...path,i]));
+    }
+    if(node.type==='euclidean')return flatten(makeManual(node),start,span,path);
+    return [{start,end:add(start,span),value:node.type==='event'?node.value:null,path,id:node.id}];
+  }
+  const SAFE_VALUE = /^[a-zA-Z0-9#:_+.-]{1,60}$/;
+  function emitMini(node, nested=false){
+    if(node.type==='rest')return '~';
+    if(node.type==='event'){
+      if(!SAFE_VALUE.test(node.value))throw Error('Unsupported event value');
+      return node.value;
+    }
+    if(node.type==='euclidean'){
+      if(!SAFE_VALUE.test(node.value))throw Error('Unsupported Euclidean event');
+      if(node.pulses===0)return '~';
+      return `${node.value}(${node.pulses},${node.steps}${node.rotation?','+node.rotation:''})`;
+    }
+    if(node.type==='sequence'){
+      if(!node.children.length)throw Error('Empty sequence');
+      const text=node.children.map(n=>emitMini(n,true)).join(' ');
+      return nested?'['+text+']':text;
+    }
+    throw Error('Unknown pattern node '+node.type);
+  }
+  // A deliberate, strict subset of Strudel mini-notation; unsupported syntax is rejected.
+  function parseMini(text){
+    const tokens=String(text).match(/\[|\]|[^\s\[\]]+/g)||[];
+    let pos=0;
+    function group(nested,depth){
+      if(depth>8)throw Error('Maximum nesting depth is eight');
+      const children=[];
+      while(pos<tokens.length){let token=tokens[pos++];
+        if(token===']'){if(!nested)throw Error('Unexpected closing bracket');if(!children.length)throw Error('Empty bracket group');return seq(children)}
+        if(token==='['){children.push(group(true,depth+1));continue}
+        if(token==='~'){children.push(rest());continue}
+        const eu=token.match(/^([a-zA-Z0-9#:_+.-]+)\((\d+),(\d+)(?:,(-?\d+))?\)$/);
+        if(eu){const p=+eu[2],s=+eu[3],r=+(eu[4]||0);if(s<1||s>64||p>s)throw Error('Euclidean range 0–64 steps');children.push(euc(eu[1],p,s,r));continue}
+        if(!SAFE_VALUE.test(token))throw Error(`Unsupported token: ${token}`);
+        children.push(ev(token));
+      }
+      if(nested)throw Error('Missing closing bracket');
+      if(!children.length)throw Error('Empty pattern');
+      return seq(children);
+    }
+    return group(false,0);
+  }
+  function cleanComment(value){return String(value||'Untitled').replace(/[\r\n\u2028\u2029]/g,' ').replace(/[^a-zA-Z0-9À-ÿ _.,:\-/]/g,'').slice(0,80)}
+  function emitLane(lane){
+    if(lane.muted)return null;
+    const mini=emitMini(lane.root);
+    const speed=Number(lane.speed)||1;
+    const gain=Number(lane.gain);
+    if(speed<=0||speed>8||!Number.isFinite(gain)||gain<0||gain>2||!Number.isInteger(lane.rotation||0)||Math.abs(lane.rotation||0)>64)throw Error('Invalid lane modifiers');
+    const drum=lane.kind!=='melody';
+    let code=drum?`s(${JSON.stringify(mini)})`:`note(${JSON.stringify(mini)}).s(${JSON.stringify(lane.instrument||'sawtooth')}).lpf(750)`;
+    if(lane.rotation){const n=lane.root.type==='sequence'?lane.root.children.length:lane.root.steps;
+      if(lane.root.type==='euclidean'){
+        // rotation is serialized directly in euclidean mini syntax if editing its own node.
+        // lane.rotation should only be applied to manual sequences.
+        code += `.late(${(lane.rotation/n).toFixed(6)})`;
+      }else code+=`.late(${(lane.rotation/n).toFixed(6)})`;
+    }
+    if(speed>1)code+=`.fast(${speed})`;
+    if(speed<1)code+=`.slow(${1/speed})`;
+    if(lane.reverse)code+='.rev()';
+    if(lane.room){const r=Number(lane.room);if(!Number.isFinite(r)||r<0||r>10)throw Error('Invalid reverb level');code+=`.room(${r.toFixed(2)})`}
+    code+=`.gain(${gain.toFixed(2)})`;
+    return code;
+  }
+  function emitProject(project){
+    const bpm=Number(project.bpm);
+    if(!Number.isFinite(bpm)||bpm<35||bpm>240)throw Error('BPM must be 35–240');
+    const active=project.lanes.map(emitLane).filter(Boolean);
+    const body=active.length?`stack(\n${active.map((s,i)=>`  // ${cleanComment(project.lanes.filter(l=>!l.muted)[i].name)}\n  ${s}`).join(',\n')}\n)`:'silence';
+    return `// Strudel Canvas / ${cleanComment(project.title)}\n// Four beats per visual cycle; edits update the running Strudel pattern.\nsetcpm(${(bpm/4).toFixed(4)})\n${body}`;
+  }
+  function validateNode(node,depth=0){
+    if(depth>12||!node||typeof node!=='object')throw Error('Invalid pattern structure');
+    if(node.type==='sequence'){
+      if(!Array.isArray(node.children)||node.children.length<1||node.children.length>64)throw Error('Invalid sequence length');
+      node.children.forEach(c=>validateNode(c,depth+1));
+    }else if(node.type==='event'){if(!SAFE_VALUE.test(node.value))throw Error('Invalid event value')}
+    else if(node.type==='euclidean'){
+      if(!SAFE_VALUE.test(node.value)||!Number.isInteger(node.pulses)||!Number.isInteger(node.steps)||node.steps<1||node.steps>64||node.pulses<0||node.pulses>node.steps||!Number.isInteger(node.rotation))throw Error('Invalid Euclidean pattern');
+    }else if(node.type!=='rest')throw Error('Unknown node type');
+  }
+  function validateProject(obj){
+    if(!obj||obj.format!=='strudel-canvas-v1'||!Array.isArray(obj.lanes)||obj.lanes.length<1||obj.lanes.length>16)throw Error('Not a Strudel Canvas v1 project');
+    if(!Number.isFinite(+obj.bpm)||obj.bpm<35||obj.bpm>240)throw Error('Invalid BPM');
+    obj.lanes.forEach(l=>{validateNode(l.root);emitLane({...l,muted:false})});
+    return true;
+  }
+  return { ev,rest,seq,euc,mod,frac,add,sub,mul,divide,num,at,replace,split,collapse,toggle,makeSteps,euclid,makeManual,flatten,emitMini,parseMini,emitLane,emitProject,validateNode,validateProject,clone};
+});
+
+</script>
+<script>
+/* Strudel Canvas UI + the @strudel/web bridge (AGPL upstream). */
+(() => {
+  'use strict';
+  const C = window.StrudelCanvasCore;
+  const E = window.StrudelCanvasEngineLoader;
+  const $ = id => document.getElementById(id);
+  const colors = { bd:'#9cebb7',sd:'#bb9ffc',hh:'#83caff',oh:'#f69ac0',rim:'#ffbd7c',cp:'#f9b0bd',lt:'#d9aaff',c2:'#f5ce83' };
+  const makeLane=(name,sound,steps,hits,description,kind='drum')=>({id:name.toLowerCase().replace(/\W/g,'-'),name,sound,kind,description,root:C.makeSteps(steps,hits,kind==='melody' ? i=>['c2','g2','eb2','bb1'][i%4]:sound),rotation:0,speed:1,gain:sound==='hh'?.35:sound==='bd'?.82:kind==='melody'?.26:.55,reverse:false,muted:false,room:0});
+  function makePreset(key){
+    if(key==='broken')return {format:'strudel-canvas-v1',title:'Broken, connected.',description:'Interlocking pulses across mismatched subdivisions.',bpm:128,lanes:[
+      makeLane('Kick','bd',16,[0,3,7,10,14],'Asymmetric low-end rhythm.'),
+      makeLane('Snare','sd',16,[4,11,13],'Off-center backbeat.'),
+      makeLane('Hats','hh',12,[0,2,4,6,8,10],'Twelve steps within one cycle.'),
+      makeLane('Rim','rim',7,[0,2,5],'Seven-part subdivision.'),
+      makeLane('Bass','c2',8,[0,3,6],'Counter-rhythm in low notes.','melody')]};
+    if(key==='minimal')return {format:'strudel-canvas-v1',title:'The geometry of groove.',description:'Euclidean distributions over shared cyclic time.',bpm:112,lanes:[
+      {...makeLane('Pulse','bd',8,[0],'Three of eight pulses.'),root:C.euc('bd',3,8,0)},
+      {...makeLane('Rim','rim',13,[0],'Five of thirteen pulses.'),root:C.euc('rim',5,13,1)},
+      {...makeLane('Hat','hh',16,[0],'Nine of sixteen pulses.'),root:C.euc('hh',9,16,0)},
+      {...makeLane('Snare','sd',8,[0],'Two of eight pulses.'),root:C.euc('sd',2,8,2)}]};
+    const caixa=makeLane('Caixa','sd',16,[3,4,7,11,12,15],'Snare syncopation with recursive ornaments.');
+    caixa.root=C.split(caixa.root,[7],2);
+    caixa.root=C.replace(caixa.root,[7,1],C.ev('sd'));
+    const chocalho=makeLane('Chocalho','hh',16,[0,2,4,6,8,10,12,14],'A cycling shaker texture with microtiming structures.');
+    chocalho.root=C.split(chocalho.root,[4],3);
+    chocalho.root=C.replace(chocalho.root,[4,1],C.ev('hh'));
+    const agogo=makeLane('Agogô','rim',12,[0,3,5,8,10],'Twelve subdivisions against sixteen.');
+    return {format:'strudel-canvas-v1',title:'Samba, unfolded.',description:'A living samba-inspired pattern constructed from independent nested layers.',bpm:102,lanes:[
+      makeLane('Surdo','bd',16,[0,7,8,15],'Deep pulse anchoring the rhythm.'),caixa,chocalho,agogo,
+      makeLane('Bass','c2',8,[0,3,4,7],'Low notes complement the drum pulse.','melody')]};
+  }
+  let project, presetKey='samba', selected=0, focus=[], picked=0, view='lanes', playing=false, startedAt=0,
+    raf=0, activeCodeMode='visual', customCode='', engineInitialized=false, audioFailure='', queue=Promise.resolve(), applyTimer=null, clickTimer=null, toastTimer=null;
+  function selectedLane(){return project.lanes[selected]}
+  function rotationOf(l){return l.root.type==='euclidean'?l.root.rotation:(l.rotation||0)}
+  function setRotation(l,r){if(l.root.type==='euclidean'){l.root={...l.root,rotation:r};l.rotation=0}else l.rotation=r}
+  function accent(l){return colors[l.sound]||'#9cf1be'}
+  function clone(o){return C.clone(o)}
+  function notify(s){$('toast').textContent=s;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),3100)}
+  function selectedSequence(){const n=C.at(selectedLane().root,focus);return n.type==='euclidean'?C.makeManual(n):n}
+  function currentChildren(){return selectedSequence().children||[]}
+  function selectedPath(){return [...focus,picked]}
+  function focusedFraction(path=focus){let root=selectedLane().root;let start=C.frac(0),span=C.frac(1);
+    for(const index of path){const node=root.type==='euclidean'?C.makeManual(root):root;
+      if(node.type!=='sequence')break;
+      const segment=C.divide(span,C.frac(node.children.length));start=C.add(start,C.mul(segment,C.frac(index)));span=segment;root=node.children[index];}
+    return {start,end:C.add(start,span)};
+  }
+  function clamp(x,lo,hi){return Math.max(lo,Math.min(hi,x))}
+  function manualRoot(){const l=selectedLane();if(l.root.type==='euclidean')l.root=C.makeManual(l.root)}
+  function meaningful(){
+    project.bpm=clamp(Math.round(+project.bpm||102),35,240);
+    persist();render();
+    if(playing&&$('autoApply').checked&&activeCodeMode==='visual')debounceApply();
+  }
+  function persist(){try{localStorage.setItem('strudel-canvas-v1',JSON.stringify(project))}catch(_) {}}
+  function mutateRoot(fn){const l=selectedLane();l.root=fn(l.root);meaningful()}
+  function toggleAt(index){
+    if(focus.length===0)manualRoot();
+    const l=selectedLane();const node=C.at(l.root,[...focus,index]);
+    picked=index;
+    if(node.type==='sequence'){render();notify('Nested cell selected · double-click or Enter to zoom in');return}
+    l.root=C.toggle(l.root,[...focus,index],l.kind==='melody'?'c2':l.sound);
+    meaningful();
+  }
+  function enterCell(index=picked){
+    const l=selectedLane();let path=[...focus,index];
+    if(C.at(l.root,focus).type==='euclidean')manualRoot();
+    const node=C.at(l.root,path);
+    if(node.type!=='sequence'){
+      if(focus.length>=7){notify('Maximum visual depth: 8 levels');return}
+      l.root=C.split(l.root,path,2);
+    }
+    focus=path;picked=0;meaningful();
+  }
+  function moveUp(){if(!focus.length)return;const last=focus.pop();picked=last;render()}
+  function splitSelected(n){
+    manualRoot();const l=selectedLane(),path=selectedPath();
+    const node=C.at(l.root,path);
+    try {if(node.type==='sequence'){notify('Already a nested sequence. Enter it to edit.');return}
+      l.root=C.split(l.root,path,n);meaningful();notify(`Step subdivided ×${n} without changing cycle length`);
+    }catch(e){notify(e.message)}
+  }
+  function collapseSelected(){manualRoot();let path=selectedPath();
+    try{selectedLane().root=C.collapse(selectedLane().root,path);meaningful()}
+    catch(e){notify('Select a nested step before collapsing')}
+  }
+  function euclideanize(){const l=selectedLane();const steps=l.root.type==='euclidean'?l.root.steps:l.root.children.length;const p=clamp(+$('pulsesRange').value,0,steps);
+    l.root=C.euc(l.kind==='melody'?'c2':l.sound,p,steps,0);l.rotation=0;focus=[];picked=0;meaningful();notify('Euclidean structure retained as a symbolic pattern')}
+  function vary(){
+    project.lanes.forEach(l=>{
+      if(l.kind==='melody')return;
+      let node=C.makeManual(l.root);
+      if(node.type!=='sequence')return;
+      const arr=node.children.slice();let count=Math.max(1,Math.floor(arr.length*.10));
+      for(let k=0;k<count;k++) {let index=Math.floor(Math.random()*arr.length),n=arr[index];if(n.type==='sequence')continue;arr[index]=n.type==='rest'?C.ev(l.sound):C.rest()}
+      l.root={...node,children:arr};
+    });focus=[];picked=0;meaningful();notify('Variation created · nested groups preserved')
+  }
+  function selectLane(i){selected=i;focus=[];picked=0;render()}
+  function setView(v){view=v;document.querySelectorAll('[data-view]').forEach(el=>el.classList.toggle('active',el.dataset.view===v));
+    $('patternPanel').classList.toggle('is-hidden',v!=='lanes');$('orbitPanel').classList.toggle('is-hidden',v!=='orbit');$('transformsPanel').classList.toggle('is-hidden',v!=='transforms');
+    if(v==='orbit')drawAllOrbits();if(v==='transforms')renderGraph()}
+  function makeButton(label,className,click,title=''){
+    const b=document.createElement('button');b.type='button';b.className=className;b.textContent=label;b.title=title;b.onclick=click;return b;
+  }
+  function fireClick(fn){return e=>{clearTimeout(clickTimer);if(e.shiftKey){splitSelected(2);return}clickTimer=setTimeout(fn,180)}}
+  function visualRootChildren(l){return l.root.type==='euclidean'?C.makeManual(l.root).children:l.root.children}
+  function displayEvent(n){if(n.type==='rest')return '~';if(n.type==='event')return n.value;
+    if(n.type==='euclidean')return `${n.pulses}/${n.steps}`;return '▤'}
+  function renderLanes(){let target=$('lanes');target.innerHTML='';
+    project.lanes.forEach((l,i)=>{
+      const row=document.createElement('div');row.className='pattern-lane';const color=accent(l);
+      const name=makeButton('',`lane-name ${selected===i?'active':''}`,()=>selectLane(i),'Inspect '+l.name);
+      const swatch=document.createElement('span');swatch.className='swatch';swatch.style.background=color;
+      const info=document.createElement('span');const b=document.createElement('strong');b.textContent=l.name+(l.muted?' (mute)':'');const sm=document.createElement('small');sm.textContent=l.kind==='melody'?'Melody':l.sound+' · '+l.speed+'×';info.append(b,sm);name.append(swatch,info);
+      const grid=document.createElement('div');grid.className='pad-grid';const children=visualRootChildren(l);
+      grid.style.gridTemplateColumns=`repeat(${children.length},minmax(0,1fr))`;
+      children.forEach((node,j)=>{
+        const isOn=node.type==='event'||node.type==='euclidean';
+        const nested=node.type==='sequence';
+        const pad=makeButton(nested?'▤':(children.length<=12?displayEvent(node):''),`pad ${isOn?'active':''} ${nested?'nested':''} ${selected===i&&!focus.length&&picked===j?'selected-pad':''}`.trim(),null,
+          `${l.name} · step ${j+1}; click to toggle; double-click to subdivide`);
+        pad.style.setProperty('--lane',color);pad.dataset.lane=i;pad.dataset.step=j;
+        pad.onclick=e=>{clearTimeout(clickTimer);if(selected!==i){selectLane(i)}if(e.shiftKey){selected=i;picked=j;splitSelected(2);return}
+          clickTimer=setTimeout(()=>{selected=i;focus=[];toggleAt(j)},180)};
+        pad.ondblclick=e=>{clearTimeout(clickTimer);selected=i;focus=[];enterCell(j)};
+        if(nested){const t=document.createElement('span');t.className='subtick';pad.appendChild(t)}
+        grid.appendChild(pad)
+      });
+      const select=makeButton(children.length+'/1','lane-select',()=>selectLane(i),'Select layer');
+      row.append(name,grid,select);target.appendChild(row);
+    });$('layerCount').textContent=`${project.lanes.length} independent layers`;
+  }
+  function renderLens(){
+    let l=selectedLane();const root=C.at(l.root,focus);
+    if(root.type!=='sequence'&&root.type!=='euclidean'){focus=[];picked=0}
+    let children=currentChildren();picked=clamp(picked,0,Math.max(0,children.length-1));
+    const crumbs=$('crumbs');crumbs.innerHTML='';crumbs.appendChild(makeButton(l.name,'crumb',()=>{focus=[];picked=0;render()},'Root layer'));
+    let traversed=[];
+    for(const index of focus){traversed.push(index);const sep=document.createElement('span');sep.className='crumb-separator';sep.textContent='›';crumbs.appendChild(sep);
+      const path=traversed.slice();crumbs.appendChild(makeButton('Step '+(index+1),'crumb',()=>{focus=path;picked=0;render()}))}
+    const f=focusedFraction();$('focusTime').textContent=`${f.start.n}/${f.start.d} → ${f.end.n}/${f.end.d} cycle`;
+    $('lensDescription').textContent=focus.length?`Zoom ${focus.length} · editing subdivisions inside step ${focus.at(-1)+1}`:`Root cycle · choose a step, then split or enter`;
+    const box=$('lensSteps');box.innerHTML='';children.forEach((node,i)=>{
+      const nested=node.type==='sequence';const on=node.type==='event'||node.type==='euclidean';
+      const p=makeButton('',`lens-cell ${on?'active':''} ${nested?'nested':''} ${picked===i?'selected':''}`.trim(),null);
+      p.style.setProperty('--accent',accent(l));p.setAttribute('aria-label',`Step ${i+1}: ${displayEvent(node)}`);
+      const idx=document.createElement('span');idx.className='idx';idx.textContent=String(i+1);
+      const val=document.createElement('span');val.className='val';val.textContent=displayEvent(node);
+      p.append(idx,val);
+      if(nested){const shape=document.createElement('span');shape.className='nested-indicator';shape.textContent=`↳ ${node.children.length} steps`;p.appendChild(shape)}
+      p.onclick=e=>{clearTimeout(clickTimer);if(e.shiftKey){picked=i;splitSelected(2);return}clickTimer=setTimeout(()=>toggleAt(i),180)};
+      p.ondblclick=e=>{clearTimeout(clickTimer);enterCell(i)};
+      box.appendChild(p);
+    });
+    $('goUp').disabled=!focus.length;$('dive').disabled=focus.length>=8;
+    $('collapse').disabled=children[picked]?.type!=='sequence';
+  }
+  function svg(tag,attrs={}) {let e=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [key,value] of Object.entries(attrs))e.setAttribute(key,value);return e}
+  function drawOrbit(target,l,size=238){
+    target.innerHTML='';let children=visualRootChildren(l),n=children.length,r=size*.335,mid=size/2,color=accent(l);
+    let el=svg('svg',{viewBox:`0 0 ${size} ${size}`,role:'img','aria-label':`${l.name} cyclic pattern`});
+    el.appendChild(svg('circle',{cx:mid,cy:mid,r,stroke:'#42505b','stroke-width':2,fill:'none'}));
+    children.forEach((node,i)=>{
+      const theta=i/n*Math.PI*2-Math.PI/2,x=mid+Math.cos(theta)*r,y=mid+Math.sin(theta)*r;
+      const isOn=node.type==='event'||node.type==='euclidean',nested=node.type==='sequence';
+      const dot=svg('circle',{cx:x,cy:y,r:nested?7:isOn?6.7:3.7,fill:nested?'#bb9ffc':isOn?color:'#4c5965',stroke:selectedLane()===l&&picked===i&&!focus.length?'#fff':'none','stroke-width':2});
+      dot.style.cursor='pointer';dot.addEventListener('click',()=>{selectLane(project.lanes.indexOf(l));picked=i;render()});
+      el.appendChild(dot);
+      if(nested){el.appendChild(svg('circle',{cx:x,cy:y,r:2,fill:'#251a39'}))}
+    });
+    const big=svg('text',{x:mid,y:mid-2,'font-size':size*.115,fill:'#ecf3f0','text-anchor':'middle'});big.textContent=n;
+    const small=svg('text',{x:mid,y:mid+17,'font-size':10,fill:'#90a4a9','text-anchor':'middle'});small.textContent='steps / cycle';el.append(big,small);target.appendChild(el);
+  }
+  function drawAllOrbits(){const box=$('allOrbits');box.innerHTML='';let n=project.lanes.length;
+    const w=480,h=340,cx=w/2,cy=h/2;const el=svg('svg',{viewBox:`0 0 ${w} ${h}`,role:'img','aria-label':'Rhythmic rings'});
+    el.style.width='min(100%, 480px)';
+    project.lanes.forEach((l,i)=>{
+      const steps=visualRootChildren(l),r=56+i*21,paint=accent(l);
+      el.appendChild(svg('circle',{cx,cy,r,fill:'none',stroke:'#3b4854','stroke-width':1.4}));
+      steps.forEach((node,j)=>{let theta=j/steps.length*Math.PI*2-Math.PI/2,x=cx+r*Math.cos(theta),y=cy+r*Math.sin(theta);
+        let on=node.type==='event'||node.type==='euclidean',nested=node.type==='sequence';
+        let dot=svg('circle',{cx:x,cy:y,r:nested?4.7:on?4.1:2,fill:nested?'#cdb0ff':on?paint:'#4f5b65'});dot.style.cursor='pointer';
+        dot.addEventListener('click',()=>{selected=i;picked=j;setView('lanes');render()});el.append(dot);
+      });
+    });
+    const txt=svg('text',{x:cx,y:cy+4,'text-anchor':'middle','font-size':12,fill:'#eff7f3'});txt.textContent='ONE CYCLE';el.appendChild(txt);box.appendChild(el);
+  }
+  function renderGraph(){const l=selectedLane(),target=$('transformGraph');target.innerHTML='';const steps=l.root.type==='euclidean'?l.root.steps:l.root.children.length;
+    let nodes=[['Source',l.kind==='melody'?'note '+l.sound:'sample '+l.sound],['Structure',l.root.type==='euclidean'?`${l.root.pulses} in ${steps} Euclidean`:`${steps} steps · recursive`],['Rotation',rotationOf(l)+' / '+steps+' steps'],['Time',l.speed+'× '+(l.reverse?'reverse':'forward')],['Dynamics',l.gain.toFixed(2)+' gain'],['Output','Strudel audio']];
+    nodes.forEach((node,i)=>{const el=document.createElement('div');el.className='transform '+(i===1?'transform-primary':'');const b=document.createElement('strong');b.textContent=node[0];const sm=document.createElement('small');sm.textContent=node[1];el.append(b,sm);target.appendChild(el);if(i<nodes.length-1){const connector=document.createElement('div');connector.className='connector';target.appendChild(connector)}})
+  }
+  function renderInspector(){
+    const l=selectedLane(),steps=l.root.type==='euclidean'?l.root.steps:l.root.children.length;
+    $('inspectorName').textContent=l.name;$('inspectorDescription').textContent=l.description;
+    $('inspectorMode').textContent=l.root.type==='euclidean'?'Euclidean':'Recursive';
+    $('stepsValue').textContent=steps;
+    $('pulseValue').textContent=(l.root.type==='euclidean'?l.root.pulses:C.flatten(l.root).filter(h=>h.value!==null).length)+' / '+steps;
+    $('pulsesRange').max=steps;$('pulsesRange').value=l.root.type==='euclidean'?l.root.pulses:Math.min(steps,C.flatten(l.root).filter(h=>h.value!==null).length);
+    $('rotationRange').min=-(steps-1);$('rotationRange').max=steps-1;$('rotationRange').value=rotationOf(l);
+    $('rotationValue').textContent=rotationOf(l)+' steps';$('sourceSound').value=l.sound;
+    $('speed').value=String(l.speed);$('speedValue').textContent=l.speed+'×';$('gain').value=l.gain;$('gainValue').textContent=Number(l.gain).toFixed(2);
+    $('reverse').checked=!!l.reverse;$('muted').checked=!!l.muted;
+    $('miniInput').value=C.emitMini(l.root);
+    drawOrbit($('singleOrbit'),l);
+  }
+  function effectiveCode(){return activeCodeMode==='custom'?customCode:C.emitProject(project)}
+  function renderCode(){if(activeCodeMode==='visual')$('codeEditor').value=C.emitProject(project);
+    $('codeModeLabel').textContent=activeCodeMode==='visual'?'· generated from visual IR':'· custom Strudel · visually unsynchronized';
+    $('editCode').textContent=activeCodeMode==='visual'?'Edit code':'Custom mode';
+    $('codeEditor').readOnly=activeCodeMode==='visual';
+    $('returnVisual').hidden=activeCodeMode==='visual';
+    $('codeNotice').textContent=activeCodeMode==='visual'?'Visual edits regenerate this code.':'Custom code runs as written; visual changes are not merged into it.';
+  }
+  function render(){
+    $('bpm').value=project.bpm;$('cycleTime').textContent=(240/project.bpm).toFixed(2)+'s';
+    $('projectTitle').textContent=project.title;$('projectDesc').textContent=project.description;
+    $('presetTag').textContent=presetKey==='custom'?'Custom sketch':presetKey==='samba'?'Samba study':presetKey==='broken'?'Broken rhythm':'Minimal pulse';
+    document.querySelectorAll('[data-preset]').forEach(e=>e.classList.toggle('selected',e.dataset.preset===presetKey));
+    renderLanes();renderLens();renderInspector();if(view==='orbit')drawAllOrbits();if(view==='transforms')renderGraph();renderCode();
+  }
+  function debounceApply(){clearTimeout(applyTimer);applyTimer=setTimeout(()=>applyToEngine().catch(()=>{}),230)}
+  function diagnosticText(state=E.state()) {
+    const locationHint=state.protocol==='file:'
+      ? 'Opened from a local file. If playback is blocked, try http://localhost using the included server instructions.'
+      : `Page origin: ${state.origin}`;
+    const onlineHint=`Browser navigator.onLine: ${state.browserOnlineHint} (this is only a hint, not a CDN connectivity test).`;
+    const attempts=state.errors.length
+      ? state.errors.map((e,i)=>`${i+1}. ${e.url}\n   ${e.reason}`).join('\n')
+      : state.phase==='ready' ? `Loaded successfully: ${state.source}` : 'No failed CDN requests recorded.';
+    const loaded=state.source ? `\n\nLoaded successfully: ${state.source}` : '';
+    const audioError=audioFailure ? `\n\nAudio initialization / evaluation error: ${audioFailure}` : '';
+    return `${locationHint}\n${onlineHint}\n\n${attempts}${loaded}${audioError}\n\nIf all attempts fail, check the browser Console / Network tab for CSP, ERR_BLOCKED_BY_CLIENT, DNS or TLS errors. Try opening one of the URLs above in a browser tab.`;
+  }
+  function updateEngineBadge(state=E.state()) {
+    const badge=$('engineBadge');
+    const labels={idle:'○ Engine not checked',loading:'◌ Loading Strudel…',ready:'● Strudel script loaded',error:'⚠ Strudel CDN failed'};
+    badge.textContent=engineInitialized?'● Strudel audio ready':audioFailure?'⚠ Audio initialization failed':labels[state.phase];
+    badge.style.color=engineInitialized?'#9cf1be':audioFailure||state.phase==='error'?'#ffbd7c':state.phase==='ready'?'#9cf1be':'#d5d9e1';
+    $('engineDiagText').textContent=diagnosticText(state);
+    $('retryEngine').disabled=state.phase==='loading';
+    if(state.phase==='error')$('engineDiagnostics').hidden=false;
+  }
+  async function initEngine(){
+    if(engineInitialized)return;
+    // initStrudel is the only guaranteed global BEFORE initialization.
+    // @strudel/web installs evaluate/hush/samples *during* initialization.
+    await E.load(true);
+    $('statusText').textContent='Initializing Strudel…';
+    try {
+      await window.initStrudel({prebake:()=>{
+        if(typeof window.samples!=='function')throw new Error('samples() was not exposed by the engine');
+        return window.samples('github:tidalcycles/dirt-samples');
+      }});
+    } catch(e) {
+      throw new Error('Strudel initialization / sample loading failed: '+(e.message||e));
+    }
+    const missing=['evaluate','hush'].filter(name=>typeof window[name]!=='function');
+    if(missing.length)throw new Error('Strudel initialized but missing '+missing.join(', ')+'. Try the bundled-project setup in the README.');
+    engineInitialized=true;audioFailure='';
+    updateEngineBadge();
+  }
+  async function applyToEngine(){
+    if(!playing)return;
+    const code=effectiveCode();
+    queue=queue.catch(()=>{}).then(async()=>{try{await window.evaluate(code);$('statusText').textContent='Playing · Strudel'}
+      catch(e){$('statusText').textContent='Audio error';notify(`Strudel evaluation failed: ${e.message||e}`);throw e}});
+    await queue;
+  }
+  function startAnimation(){cancelAnimationFrame(raf);startedAt=performance.now();
+    const tick=()=>{if(!playing)return;const phase=((performance.now()-startedAt)/(240000/project.bpm))%1;
+      document.querySelectorAll('.pad').forEach(p=>{const lane=project.lanes[+p.dataset.lane];if(!lane)return;const count=visualRootChildren(lane).length;p.classList.toggle('playhead',Math.floor(phase*count)===+p.dataset.step)});
+      raf=requestAnimationFrame(tick)};tick();
+  }
+  async function play(){if(playing)return;
+    $('statusText').textContent='Preparing Strudel…';$('playButton').disabled=true;
+    try{await initEngine();playing=true;await applyToEngine();$('playButton').textContent='■';$('statusDot').classList.add('on');startAnimation()}
+    catch(e){playing=false;audioFailure=String(e.message||e);notify('Could not start Strudel: '+audioFailure);$('statusText').textContent='Playback unavailable';$('engineDiagnostics').hidden=false;updateEngineBadge()}
+    finally{$('playButton').disabled=false}
+  }
+  async function stop(){clearTimeout(applyTimer);playing=false;cancelAnimationFrame(raf);$('playButton').textContent='▶';$('statusDot').classList.remove('on');$('statusText').textContent='Stopped';
+    document.querySelectorAll('.pad').forEach(p=>p.classList.remove('playhead'));try{if(engineInitialized)await window.hush()}catch(e){notify('Stop error: '+e.message)}}
+  function download(name,body,type='text/plain'){
+    const a=document.createElement('a'),url=URL.createObjectURL(new Blob([body],{type}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
+  }
+  function choosePreset(key){if(playing)stop();presetKey=key;project=makePreset(key);selected=0;focus=[];picked=0;activeCodeMode='visual';customCode='';persist();setView('lanes');render()}
+  function addLane(){if(project.lanes.length>=12){notify('Maximum 12 layers');return};let i=project.lanes.length+1;project.lanes.push(makeLane('New voice '+i,'cp',8,[0,4],'An independent rhythmic voice.'));selectLane(project.lanes.length-1);meaningful()}
+  function changeSteps(n){let l=selectedLane(),steps=l.root.type==='euclidean'?l.root.steps:l.root.children.length;
+    n=clamp(n,2,32);if(n===steps)return;
+    if(l.root.type==='euclidean'){l.root={...l.root,steps:n,pulses:Math.min(l.root.pulses,n),rotation:0};}
+    else{
+      const children=l.root.children.slice();while(children.length<n)children.push(C.rest());while(children.length>n)children.pop();l.root={...l.root,children};
+    }
+    l.rotation=0;focus=[];picked=0;meaningful();
+  }
+  function adjustSound(s){let l=selectedLane();l.sound=s;l.kind=s==='c2'?'melody':'drum';
+    const value=l.kind==='melody'?'c2':s;
+    function revoice(n){if(n.type==='event')return {...n,value};if(n.type==='euclidean')return {...n,value};if(n.type==='sequence')return {...n,children:n.children.map(revoice)};return n}
+    l.root=revoice(l.root);meaningful()}
+  // Engine status describes script loading, not general internet access.
+  E.subscribe(updateEngineBadge);
+  $('engineBadge').onclick=()=>{$('engineDiagnostics').hidden=!$('engineDiagnostics').hidden;updateEngineBadge()};
+  $('closeEngineDiag').onclick=()=>$('engineDiagnostics').hidden=true;
+  $('retryEngine').onclick=()=>E.load(true).catch(()=>{});
+  // Event wiring
+  $('playButton').onclick=()=>playing?stop():play();$('applyLive').onclick=async()=>{if(!playing){await play();return}try{await applyToEngine();notify('Sent current code to Strudel')}catch(_){}};
+  $('bpm').onchange=e=>{project.bpm=clamp(Math.round(+e.target.value||102),35,240);meaningful()};
+  document.querySelectorAll('[data-preset]').forEach(e=>e.onclick=()=>choosePreset(e.dataset.preset));
+  document.querySelectorAll('[data-view]').forEach(e=>e.onclick=()=>setView(e.dataset.view));
+  $('composeNav').onclick=()=>setView('lanes');$('codeNav').onclick=()=>$('codeSection').scrollIntoView({behavior:'smooth',block:'center'});
+  $('orbitGoBack').onclick=()=>setView('lanes');$('mutate').onclick=vary;$('resetPreset').onclick=()=>choosePreset(presetKey==='custom'?'samba':presetKey);
+  $('addLane').onclick=addLane;$('goUp').onclick=moveUp;$('dive').onclick=()=>enterCell();$('split2').onclick=()=>splitSelected(2);$('split3').onclick=()=>splitSelected(3);$('collapse').onclick=collapseSelected;
+  $('stepsMinus').onclick=()=>changeSteps((selectedLane().root.type==='euclidean'?selectedLane().root.steps:selectedLane().root.children.length)-1);
+  $('stepsPlus').onclick=()=>changeSteps((selectedLane().root.type==='euclidean'?selectedLane().root.steps:selectedLane().root.children.length)+1);
+  $('sourceSound').onchange=e=>adjustSound(e.target.value);
+  $('applyEuclid').onclick=euclideanize;$('shiftPattern').onclick=()=>{const l=selectedLane(),n=l.root.type==='euclidean'?l.root.steps:l.root.children.length;setRotation(l,C.mod(rotationOf(l)+1,n));meaningful()};
+  $('pulsesRange').onchange=e=>{const l=selectedLane();let n=l.root.type==='euclidean'?l.root.steps:l.root.children.length;let r=rotationOf(l);l.root=C.euc(l.kind==='melody'?'c2':l.sound,+e.target.value,n,r);l.rotation=0;focus=[];picked=0;meaningful()};
+  $('rotationRange').onchange=e=>{setRotation(selectedLane(),+e.target.value);meaningful()};
+  $('speed').onchange=e=>{selectedLane().speed=+e.target.value;meaningful()};
+  $('gain').oninput=e=>$('gainValue').textContent=(+e.target.value).toFixed(2);
+  $('gain').onchange=e=>{selectedLane().gain=+e.target.value;meaningful()};
+  $('reverse').onchange=e=>{selectedLane().reverse=e.target.checked;meaningful()};
+  $('muted').onchange=e=>{selectedLane().muted=e.target.checked;meaningful()};
+  $('parseMini').onclick=()=>{try{const root=C.parseMini($('miniInput').value);C.validateNode(root);selectedLane().root=root;selectedLane().rotation=0;focus=[];picked=0;meaningful();notify('Mini-notation imported into the recursive editor')}
+    catch(e){notify('Mini-notation not imported: '+e.message)}};
+  $('editCode').onclick=()=>{if(activeCodeMode==='custom'){$('codeEditor').focus();return}customCode=C.emitProject(project);activeCodeMode='custom';renderCode();$('codeEditor').focus();notify('Custom code mode: visual changes will not overwrite your code')};
+  $('codeEditor').oninput=e=>{if(activeCodeMode==='custom'){customCode=e.target.value;if(playing&&$('autoApply').checked)debounceApply()}};
+  $('returnVisual').onclick=()=>{activeCodeMode='visual';customCode='';renderCode();if(playing&&$('autoApply').checked)debounceApply();notify('Back to visual-generated source')};
+  $('copyCode').onclick=async()=>{try{await navigator.clipboard.writeText(effectiveCode());notify('Copied current Strudel code')}catch(e){notify('Clipboard unavailable · use the .js export')}};
+  $('downloadCode').onclick=()=>download('strudel-canvas.js',effectiveCode());
+  $('openStrudel').onclick=()=>{
+    const bytes=new TextEncoder().encode(effectiveCode());let binary='';for(let i=0;i<bytes.length;i++)binary+=String.fromCharCode(bytes[i]);
+    window.open('https://strudel.cc/#'+encodeURIComponent(btoa(binary)),'_blank','noopener,noreferrer');
+  };
+  $('saveProject').onclick=()=>download('strudel-canvas-project.json',JSON.stringify(project,null,2),'application/json');
+  $('importProject').onclick=()=>$('projectFile').click();
+  $('projectFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const incoming=JSON.parse(await f.text());C.validateProject(incoming);
+      if(playing)await stop();project=incoming;presetKey='custom';selected=0;focus=[];picked=0;activeCodeMode='visual';persist();render();notify('Project imported successfully')}
+    catch(error){notify('Import rejected: '+error.message)}e.target.value=''};
+  document.addEventListener('keydown',e=>{
+    const typing=['TEXTAREA','INPUT','SELECT'].includes(document.activeElement?.tagName)||document.activeElement?.isContentEditable;
+    if(typing)return;
+    if(e.code==='Space'){e.preventDefault();playing?stop():play()}
+    if(e.code==='Escape'&&focus.length){moveUp()}
+    if(e.code==='Enter'&&view==='lanes'){e.preventDefault();enterCell()}
+  });
+  try{const previous=JSON.parse(localStorage.getItem('strudel-canvas-v1')||'null');if(previous){C.validateProject(previous);project=previous;presetKey='custom'}else project=makePreset('samba')}
+  catch(_){project=makePreset('samba')}
+  render();
+  // Start downloading as soon as the visual UI is ready; retry from Diagnostics or Play.
+  E.load().catch(()=>{});
+  // Tiny test hook: no mutation functions exposed and no remote API dependency.
+  window.__strudelCanvasDebug=Object.freeze({getProject:()=>clone(project),getFocus:()=>focus.slice(),getCode:()=>effectiveCode()});
+})();
+
+</script>
+</body>
+</html>
